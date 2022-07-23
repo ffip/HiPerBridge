@@ -186,7 +186,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) {
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        // .creation_flags(0x08000000)
+        .creation_flags(0x08000000)
         .spawn()
         .expect("Failed to start hiper!");
 

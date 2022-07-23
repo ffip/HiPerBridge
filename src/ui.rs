@@ -81,12 +81,12 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                 )
                 .with_spacer(10.)
                 .with_child(
-                    IconButton::new(scl_gui_widgets::theme::icons::SETTINGS).on_click(
-                        |ctx, _, _| {
+                    IconButton::new(scl_gui_widgets::theme::icons::SETTINGS)
+                        .on_click(|ctx, _, _| {
                             ctx.submit_command(ENABLE_BACK_PAGE.with(true));
                             ctx.submit_command(PUSH_PAGE.with("setting"));
-                        },
-                    ),
+                        })
+                        .disabled_if(|data: &AppState, _| !data.ip.is_empty()),
                 )
                 .must_fill_main_axis(true),
         )

@@ -77,8 +77,8 @@ fn main() {
             scl_gui_widgets::theme::color::Theme::Light,
         );
         
-        env.set(scl_gui_widgets::theme::icons::SETTINGS.0, "M0 7H4.17157L1.08579 3.91421L3.91421 1.08579L7 4.17157V0H11V4.17157L14.0858 1.08579L16.9142 3.91421L13.8284 7H18V11H13.8284L16.9142 14.0858L14.0858 16.9142L11 13.8284V18H7V13.8284L3.91421 16.9142L1.08579 14.0858L4.17157 11H0V7ZM11 7H7V11H11V7Z");
-        env.set(scl_gui_widgets::theme::icons::SETTINGS.1, Color::Rgba32(0x000000FF));
+        env.set(scl_gui_widgets::theme::icons::SETTINGS.0, include_str!("../assets/setting-path.txt"));
+        env.set(scl_gui_widgets::theme::icons::SETTINGS.1, Color::Rgba32(0x212121FF));
         env.set(scl_gui_widgets::theme::icons::SETTINGS.2, Color::Rgba32(0xFFFFFFFF));
 
         // Theme
@@ -102,6 +102,8 @@ fn main() {
             Insets::new(12.0, 6.0, 12.0, 6.0),
         );
 
+        env.set(scl_gui_widgets::theme::color::main::PRIMARY, Color::Rgba32(0x0071DCFF));
+        env.set(scl_gui_widgets::theme::color::main::SECONDARY, Color::Rgba32(0x0057AAFF));
         env.set(druid::theme::PRIMARY_LIGHT, Color::Rgba32(0x0071DCFF));
         env.set(druid::theme::PRIMARY_DARK, Color::Rgba32(0x75DEFFFF));
         env.set(druid::theme::FOREGROUND_LIGHT, Color::Rgba32(0x0071DCFF));
