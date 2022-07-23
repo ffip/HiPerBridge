@@ -35,7 +35,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
         .with_spacer(5.)
         .with_child(
             TextBox::new()
-                .with_placeholder("凭证密钥（可选）")
+                .with_placeholder("凭证密钥")
                 .lens(AppState::token)
                 .disabled_if(|data, _| !data.ip.is_empty()),
         )
