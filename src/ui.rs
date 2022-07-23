@@ -18,7 +18,7 @@ pub const SET_DISABLED: Selector<bool> = Selector::new("set-disabled");
 fn main_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
         // .with_child(label::new("HiPer Bridge").with_font(typography::SUBHEADER))
-        .with_child(label::new("非官方轻量级 HiPer 启动器\nBy SteveXMH"))
+        .with_child(label::new("非官方轻量级 HiPer Plus 启动器\nBy SteveXMH"))
         .with_flex_spacer(1.)
         .with_child(
             label::dynamic(|data: &AppState, _| data.warning.to_owned())
@@ -35,7 +35,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
         .with_spacer(5.)
         .with_child(
             TextBox::new()
-                .with_placeholder("凭证密钥（可选）")
+                .with_placeholder("凭证密钥")
                 .lens(AppState::token)
                 .disabled_if(|data, _| !data.ip.is_empty()),
         )
@@ -76,7 +76,8 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                 }
                             }
                         })
-                        .expand_width(),
+                        .expand_width()
+                        .disabled_if(|data: &AppState, _| data.token.is_empty()),
                     1.,
                 )
                 .with_spacer(10.)
