@@ -125,8 +125,8 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) {
 
     let tap_path = hiper_dir_path.join("tap-windows.exe");
     let wintun_path = hiper_dir_path.join("wintun.dll");
-    let hiper_plus_path = hiper_dir_path.join("hiper_plus.exe");
-    let hiper_env_path = hiper_dir_path.join("hiper_env.exe");
+    let hiper_plus_path = hiper_dir_path.join("hpr.exe");
+    let hiper_env_path = hiper_dir_path.join("hpr_env.exe");
 
     std::fs::create_dir_all(&hiper_dir_path).expect("Can't create hiper path!");
 
