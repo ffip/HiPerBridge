@@ -168,8 +168,14 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) {
         }
         let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/plus/windows/64bit/hpr.exe")
             .send()
-            .expect("Can't send tap download request!");
+            .expect("Can't send tap download hiper request!");
         std::fs::write(&hiper_plus_path, res.as_bytes()).expect("Can't write tap into file!");
+        
+        let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/plus/windows/64bit/hpr_env.exe")
+            .send()
+            .expect("Can't send tap download hiper environment utils request!");
+        std::fs::write(&hiper_plus_path, res.as_bytes()).expect("Can't write tap into file!");
+        
         HAS_UPDATED.store(true, std::sync::atomic::Ordering::SeqCst);
     }
 
