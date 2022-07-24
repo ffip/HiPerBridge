@@ -18,7 +18,7 @@ pub const SET_DISABLED: Selector<bool> = Selector::new("set-disabled");
 fn main_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
         // .with_child(label::new("HiPer Bridge").with_font(typography::SUBHEADER))
-        .with_child(label::new("非官方轻量级 HiPer Plus 启动器\nBy SteveXMH"))
+        .with_child(label::new("By SteveXMH"))
         .with_flex_spacer(1.)
         .with_child(
             label::dynamic(|data: &AppState, _| data.warning.to_owned())
@@ -29,7 +29,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
             if data.ip.is_empty() {
                 "".into()
             } else {
-                format!("Hiper 正在运行！\n你的 IP 联机地址：{}", data.ip)
+                format!("Hiper 正在运行！\网络地址：{}", data.ip)
             }
         }))
         .with_spacer(5.)
@@ -101,7 +101,7 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
         .with_child(label::new("设置"))
         .with_spacer(10.)
-        .with_child(label::new("使用 WinTUN 而非 TAP"))
+        .with_child(label::new("使用 WinTUN 而非 WinTAP"))
         .with_spacer(5.)
         .with_child(ToggleSwitch::new().lens(AppState::use_tun))
         .cross_axis_alignment(widget::CrossAxisAlignment::Fill)
