@@ -1,6 +1,6 @@
 use std::{
     fs::OpenOptions,
-    io::{BufRead, BufReader, Read, Write},
+    io::{BufRead, BufReader, Write},
     os::windows::process::CommandExt,
     path::PathBuf,
     process::{Command, Stdio},
@@ -78,7 +78,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let _ = ctx.submit_command(SET_START_TEXT, "正在检查所需文件", Target::Auto);
     let _ = ctx.submit_command(SET_WARNING, "".to_string(), Target::Auto);
 
-    let appdata = PathBuf::from_str(std::env!("APPDATA")).context("Can't get appdata path!")?;
+    let appdata = PathBuf::from_str(std::env!("APPDATA")).context("无法获取 APPDATA 环境变量")?;
     let hiper_dir_path = appdata.join("hiper");
 
     let tap_path = hiper_dir_path.join("tap-windows.exe");
@@ -87,14 +87,12 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let hiper_plus_path = hiper_dir_path.join("hpr.exe");
     let hiper_env_path = hiper_dir_path.join("hpr_env.exe");
 
-    std::fs::create_dir_all(&hiper_dir_path).context("Can't create hiper path!")?;
+    std::fs::create_dir_all(&hiper_dir_path).context("无法创建 HiPer 安装目录")?;
 
     if !use_tun && wintun_path.exists() {
-        std::fs::rename(&wintun_path, &wintun_disabled_path)
-            .context("Can't rename hiper to disabled!")?;
+        std::fs::rename(&wintun_path, &wintun_disabled_path).context("无法禁用 WinTUN")?;
     } else if use_tun && wintun_disabled_path.exists() {
-        std::fs::rename(&wintun_disabled_path, &wintun_path)
-            .context("Can't rename hiper from disabled!")?;
+        std::fs::rename(&wintun_disabled_path, &wintun_path).context("无法启用 WinTUN")?;
     }
 
     if use_tun {
@@ -104,26 +102,26 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
                 "https://gitcode.net/to/hiper/-/raw/plus/windows/wintun/amd64/wintun.dll",
             )
             .send()
-            .context("Can't send tap download request!")?;
-            std::fs::write(&wintun_path, res.as_bytes()).context("Can't write tap into file!")?;
+            .context("无法下载 WinTUN")?;
+            std::fs::write(&wintun_path, res.as_bytes()).context("无法安装 WinTUN")?;
         }
     } else if !check_tap_installed() {
         if !tap_path.exists() {
-            let _ = ctx.submit_command(SET_START_TEXT, "正在下载 TAP 虚拟网卡", Target::Auto);
+            let _ = ctx.submit_command(SET_START_TEXT, "正在下载 WinTAP", Target::Auto);
             let res = tinyget::get(
                 "https://gitcode.net/chearlai/f/-/raw/master/d/tap-windows-9.21.2.exe",
             )
             .send()
-            .context("Can't send tap download request!")?;
+            .context("无法下载 WinTAP 安装程序")?;
             std::fs::write(&tap_path, res.as_bytes()).context("Can't write tap into file!")?;
         }
-        let _ = ctx.submit_command(SET_START_TEXT, "正在安装 TAP 虚拟网卡", Target::Auto);
+        let _ = ctx.submit_command(SET_START_TEXT, "正在安装 WinTAP", Target::Auto);
 
         let c = Command::new(tap_path)
             .arg("/S")
             .status()
-            .context("Failed to run tap installer!")?;
-        c.code().context("Failed to install tap!")?;
+            .context("无法运行 WinTAP 安装程序")?;
+        c.code().context("无法安装 WinTAP")?;
     }
 
     let _update_available = false;
@@ -136,16 +134,15 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
         }
         let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/plus/windows/64bit/hpr.exe")
             .send()
-            .context("Can't send tap download hiper request!")?;
+            .context("无法下载 HiPer Plus 程序")?;
         println!("HPR downloaded, size {}", res.as_bytes().len());
-        std::fs::write(&hiper_plus_path, res.as_bytes()).context("Can't write hpr into file!")?;
+        std::fs::write(&hiper_plus_path, res.as_bytes()).context("无法安装 HiPer Plus 程序")?;
 
         let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/plus/windows/64bit/hpr_env.exe")
             .send()
-            .context("Can't send tap download hiper environment utils request!")?;
+            .context("无法下载 HiPer Plus Env 程序")?;
         println!("HPR Env downloaded, size {}", res.as_bytes().len());
-        std::fs::write(&hiper_env_path, res.as_bytes())
-            .context("Can't write hpr env into file!")?;
+        std::fs::write(&hiper_env_path, res.as_bytes()).context("无法安装 HiPer Plus Env 程序")?;
 
         HAS_UPDATED.store(true, std::sync::atomic::Ordering::SeqCst);
     }
@@ -167,14 +164,12 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
         .stderr(Stdio::piped())
         .creation_flags(0x08000000)
         .spawn()
-        .context("Failed to start hiper!")?;
+        .context("无法启动 HiPer Plus")?;
 
     HIPER_PROCESS.store(child.id(), std::sync::atomic::Ordering::SeqCst);
 
-    let stdout = child
-        .stdout
-        .take()
-        .context("Can't get stdout from hiper!")?;
+    let stdout = child.stdout.take().context("无法获取 HiPer 输出流")?;
+
     let mut stdout = BufReader::new(stdout);
     let mut buf = String::with_capacity(256);
 
@@ -187,13 +182,13 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
             .write(true)
             .create(true)
             .open("latest.log")
-            .context("Can't open logger file (latest.log)!");
+            .context("无法打开日志文件 (latest.log)!");
         let mut sender = Some(sender);
         while let Ok(len) = stdout.read_line(&mut buf) {
             if len == 0 {
                 if let Some(sender) = sender.take() {
                     sender.send("".into()).map_err(|x| {
-                        anyhow::anyhow!("Can't send ip to parent thread! {}", x.as_inner())
+                        anyhow::anyhow!("无法发送 IP 地址到父线程：{}", x.as_inner())
                     })?;
                 }
                 return Ok(());
@@ -201,7 +196,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
             if let Ok(Some(_)) = child.try_wait() {
                 if let Some(sender) = sender.take() {
                     sender.send("".into()).map_err(|x| {
-                        anyhow::anyhow!("Can't send ip to parent thread! {}", x.as_inner())
+                        anyhow::anyhow!("无法发送 IP 地址到父线程：{}", x.as_inner())
                     })?;
                     return Ok(());
                 }
@@ -216,12 +211,12 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
                 if ipv4.is_unspecified() {
                     if let Some(sender) = sender.take() {
                         sender.send("".into()).map_err(|x| {
-                            anyhow::anyhow!("Can't send ip to parent thread! {}", x.as_inner())
+                            anyhow::anyhow!("无法发送 IP 地址到父线程：{}", x.as_inner())
                         })?;
                     }
                 } else if let Some(sender) = sender.take() {
                     sender.send(ipv4.to_string()).map_err(|x| {
-                        anyhow::anyhow!("Can't send ip to parent thread! {}", x.as_inner())
+                        anyhow::anyhow!("无法发送 IP 地址到父线程：{}", x.as_inner())
                     })?;
                 }
             }
@@ -230,9 +225,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
         Ok(())
     });
 
-    let ip = reciver
-        .recv()
-        .context("Can't receive ip from logger thread!")?;
+    let ip = reciver.recv().context("未能从 HiPer 输出中获取 IP 地址")?;
 
     if ip.is_empty() {
         let _ = ctx.submit_command(SET_START_TEXT, "启动", Target::Auto);

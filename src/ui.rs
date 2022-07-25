@@ -19,12 +19,15 @@ fn main_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
         // .with_child(label::new("HiPer Bridge").with_font(typography::SUBHEADER))
         .with_child(label::new("By SteveXMH"))
-        .with_flex_spacer(1.)
-        .with_child(
+        .with_spacer(10.)
+        .with_flex_child(
             label::dynamic(|data: &AppState, _| data.warning.to_owned())
-                .with_text_color(Color::Rgba32(0x9D5D00FF)),
+                .with_text_color(Color::Rgba32(0x9D5D00FF))
+                .scroll()
+                .vertical()
+                .expand(),
+            1.,
         )
-        .with_flex_spacer(1.)
         .with_child(label::dynamic(|data: &AppState, _| {
             if data.ip.is_empty() {
                 "".into()
@@ -70,6 +73,11 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                             }
                                             Err(e) => {
                                                 println!("Failed to launch! {}", e);
+                                                let _ = ctx.submit_command(
+                                                    SET_WARNING,
+                                                    format!("启动时发生错误：{}", e),
+                                                    Target::Auto,
+                                                );
                                             }
                                         }
                                         let _ =
