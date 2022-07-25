@@ -31,7 +31,7 @@ pub const REQUEST_RESTART: Selector = Selector::new("request-restart");
 fn main_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
         // .with_child(label::new("HiPer Bridge").with_font(typography::SUBHEADER))
-        .with_child(label::new("By SteveXMH"))
+        .with_child(label::new("迅若惊雷 x 安如磐石 x 轻若鸿羽"))
         .with_spacer(10.)
         .with_flex_child(
             label::dynamic(|data: &AppState, _| data.warning.to_owned())
@@ -143,7 +143,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
 
 fn setting_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
-        .with_child(label::new("设置"))
+        .with_child(label::new("选项"))
         .with_spacer(10.)
         .with_child(label::new("使用 WinTUN 而非 WinTAP"))
         .with_spacer(5.)
