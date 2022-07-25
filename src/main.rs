@@ -2,6 +2,7 @@
 
 use config::{load_config, save_config};
 use druid::{commands::CLOSE_WINDOW, WidgetExt as _, *};
+use hiper::run_hiper_in_thread;
 use scl_gui_widgets::{widget_ext::WidgetExt as _, widgets::*};
 
 mod app_state;
@@ -43,6 +44,8 @@ fn main() {
 
     load_config(&mut state);
 
+    let size = (280., 232. + 32.);
+
     AppLauncher::with_window(
         WindowDesc::new(
             WindowWidget::new("HiPer Bridge", ui::ui_builder())
@@ -57,6 +60,14 @@ fn main() {
                 })
                 .on_command(SET_WARNING, |_, warning, data| {
                     data.warning = warning.to_owned();
+                })
+                .on_command(REQUEST_RESTART, |ctx, _, data| {
+                    if data.auto_restart && !data.ip.is_empty() {
+                        let token = data.inner_token.to_owned();
+                        let use_tun = data.use_tun;
+                        let ctx = ctx.get_external_handle();
+                        run_hiper_in_thread(ctx, token, use_tun);
+                    }
                 })
                 .on_notify(BACK_PAGE_CLICKED, |ctx, _, _| {
                     ctx.submit_command(QUERY_POP_PAGE.with("main"));
@@ -77,8 +88,27 @@ fn main() {
                 })
                 .disabled_if(|data, _| data.disabled),
         )
+        .set_position({
+            #[cfg(windows)]
+            {
+                let monitors = Screen::get_monitors();
+                let screen = monitors.iter().find(|a| a.is_primary()).unwrap();
+                let screen_rect = screen.virtual_work_rect();
+                druid::Point::new(
+                    (screen_rect.width() - size.0) / 2.,
+                    (screen_rect.height() - size.1) / 2.,
+                )
+            }
+            #[cfg(not(windows))]
+            {
+                druid::Point::new(
+                    (screen_rect.width() - size.0) / 2.,
+                    (screen_rect.height() - size.1) / 2.,
+                )
+            }
+        })
         .resizable(false)
-        .window_size((250., 232. + 32.))
+        .window_size(size)
         .window_size_policy(WindowSizePolicy::User)
         .title("HiPer Bridge")
         .show_titlebar(false),
@@ -101,6 +131,12 @@ fn main() {
             scl_gui_widgets::theme::icons::SETTINGS.2,
             Color::Rgba32(0xFFFFFFFF),
         );
+
+        env.set(
+            crate::ui::CLIPBOARD_TEXT_PATH,
+            include_str!("../assets/clipboard-text.txt"),
+        );
+        env.set(crate::ui::CLIPBOARD_TEXT_COLOR, Color::Rgba32(0x212121FF));
 
         // Theme
         env.set(druid::theme::SCROLLBAR_WIDTH, 2.);

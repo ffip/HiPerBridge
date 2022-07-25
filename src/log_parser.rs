@@ -29,11 +29,17 @@ fn parse_ipv4(input: &str) -> IResult<&str, std::net::Ipv4Addr> {
     Ok((input, std::net::Ipv4Addr::new(a, b, c, d)))
 }
 
-fn parse_ipv4_line(input: &str) -> IResult<&str, std::net::Ipv4Addr> {
+pub fn parse_log_line(input: &str) -> IResult<&str, &str> {
     let (input, _time) = parse_time(input)?;
     let (input, _) = tag(" ")(input)?;
-    let (input, _log_type) = take_while1(|x: char| !x.is_whitespace())(input)?;
-    let (input, _) = tag(" ipv4[")(input)?;
+    let (input, log_type) = take_while1(|x: char| !x.is_whitespace())(input)?;
+    let (input, _) = tag(" ")(input)?;
+    Ok((input, log_type))
+}
+
+fn parse_ipv4_line(input: &str) -> IResult<&str, std::net::Ipv4Addr> {
+    let (input, _log_type) = parse_log_line(input)?;
+    let (input, _) = tag("ipv4[")(input)?;
     let (input, ipv4) = parse_ipv4(input)?;
     let (input, _) = tag("]")(input)?;
     Ok((input, ipv4))
