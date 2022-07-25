@@ -139,7 +139,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
         if !tap_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载 WinTAP", Target::Auto);
             let res = tinyget::get(
-                "https://gitcode.net/chearlai/f/-/raw/master/d/tap-windows-9.21.2.exe",
+                "https://gitcode.net/to/hiper/-/raw/plus/windows/tap-windows-9.21.2.exe",
             )
             .send()
             .context("无法下载 WinTAP 安装程序")?;
