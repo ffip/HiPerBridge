@@ -1,11 +1,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use config::{load_config, save_config};
 use druid::{commands::CLOSE_WINDOW, WidgetExt as _, *};
 use scl_gui_widgets::{widget_ext::WidgetExt as _, widgets::*};
 
 mod app_state;
+mod config;
 mod hiper;
+mod log_parser;
+mod open_url;
 mod ui;
+
+pub type DynResult<T = ()> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 use app_state::AppState;
 use ui::*;
@@ -33,6 +39,10 @@ fn main() {
         }
     }
 
+    let mut state = AppState::default();
+
+    load_config(&mut state);
+
     AppLauncher::with_window(
         WindowDesc::new(
             WindowWidget::new("HiPer Bridge", ui::ui_builder())
@@ -56,8 +66,10 @@ fn main() {
                     if !data.disabled {
                         data.disabled = true;
                         let wid = ctx.window_id();
+                        let state = data.to_owned();
                         let ctx = ctx.get_external_handle();
                         std::thread::spawn(move || {
+                            save_config(&state);
                             hiper::stop_hiper(ctx.to_owned());
                             let _ = ctx.submit_command(CLOSE_WINDOW, (), Target::Window(wid));
                         });
@@ -76,10 +88,19 @@ fn main() {
             env,
             scl_gui_widgets::theme::color::Theme::Light,
         );
-        
-        env.set(scl_gui_widgets::theme::icons::SETTINGS.0, include_str!("../assets/setting-path.txt"));
-        env.set(scl_gui_widgets::theme::icons::SETTINGS.1, Color::Rgba32(0x212121FF));
-        env.set(scl_gui_widgets::theme::icons::SETTINGS.2, Color::Rgba32(0xFFFFFFFF));
+
+        env.set(
+            scl_gui_widgets::theme::icons::SETTINGS.0,
+            include_str!("../assets/setting-path.txt"),
+        );
+        env.set(
+            scl_gui_widgets::theme::icons::SETTINGS.1,
+            Color::Rgba32(0x212121FF),
+        );
+        env.set(
+            scl_gui_widgets::theme::icons::SETTINGS.2,
+            Color::Rgba32(0xFFFFFFFF),
+        );
 
         // Theme
         env.set(druid::theme::SCROLLBAR_WIDTH, 2.);
@@ -102,8 +123,14 @@ fn main() {
             Insets::new(12.0, 6.0, 12.0, 6.0),
         );
 
-        env.set(scl_gui_widgets::theme::color::main::PRIMARY, Color::Rgba32(0x0071DCFF));
-        env.set(scl_gui_widgets::theme::color::main::SECONDARY, Color::Rgba32(0x0057AAFF));
+        env.set(
+            scl_gui_widgets::theme::color::main::PRIMARY,
+            Color::Rgba32(0x0071DCFF),
+        );
+        env.set(
+            scl_gui_widgets::theme::color::main::SECONDARY,
+            Color::Rgba32(0x0057AAFF),
+        );
         env.set(druid::theme::PRIMARY_LIGHT, Color::Rgba32(0x0071DCFF));
         env.set(druid::theme::PRIMARY_DARK, Color::Rgba32(0x75DEFFFF));
         env.set(druid::theme::FOREGROUND_LIGHT, Color::Rgba32(0x0071DCFF));
@@ -145,15 +172,7 @@ fn main() {
         env.set(druid::theme::TEXTBOX_BORDER_WIDTH, 1.);
         env.set(druid::theme::TEXTBOX_BORDER_RADIUS, 2.);
     })
-    .launch(AppState {
-        is_in_admin: false,
-        disabled: false,
-        use_tun: true,
-        start_button: "启动",
-        ip: "".into(),
-        warning: "".into(),
-        token: "".into(),
-    })
+    .launch(state)
     .unwrap();
 
     hiper::stop_hiper_directly();

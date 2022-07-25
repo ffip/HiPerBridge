@@ -664,6 +664,7 @@ dependencies = [
 name = "hiper-bridge"
 version = "0.0.2"
 dependencies = [
+ "anyhow",
  "druid",
  "nom",
  "oneshot",

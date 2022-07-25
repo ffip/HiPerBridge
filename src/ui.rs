@@ -3,7 +3,7 @@ use druid::{
     *,
 };
 
-use scl_gui_widgets::widgets::*;
+use scl_gui_widgets::{widget_ext::WidgetExt as _, widgets::*};
 
 use crate::{
     app_state::AppState,
@@ -29,7 +29,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
             if data.ip.is_empty() {
                 "".into()
             } else {
-                format!("Hiper 正在运行！\网络地址：{}", data.ip)
+                format!("Hiper 正在运行！\n网络地址：{}", data.ip)
             }
         }))
         .with_spacer(5.)
@@ -37,6 +37,9 @@ fn main_page() -> Box<dyn Widget<AppState>> {
             TextBox::new()
                 .with_placeholder("凭证密钥")
                 .lens(AppState::token)
+                .on_change(|_, old_data, data, _| {
+                    data.token_modified |= old_data.token != data.token;
+                })
                 .disabled_if(|data, _| !data.ip.is_empty()),
         )
         .with_spacer(10.)
@@ -47,14 +50,28 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                         .with_accent(true)
                         .on_click(|ctx, data, _| {
                             let ctx = ctx.get_external_handle();
-                            let token = data.token.to_owned();
+                            if data.token_modified {
+                                data.inner_token = data.token.to_owned();
+                                if !data.inner_token.is_empty() {
+                                    data.token = "••••••••".into();
+                                }
+                                data.token_modified = false;
+                            }
+                            let token = data.inner_token.to_owned();
                             let use_tun = data.use_tun;
                             match data.start_button {
                                 "启动" => {
                                     std::thread::spawn(move || {
                                         let _ =
                                             ctx.submit_command(SET_DISABLED, true, Target::Auto);
-                                        run_hiper(ctx.to_owned(), token, use_tun);
+                                        match run_hiper(ctx.to_owned(), token, use_tun) {
+                                            Ok(_) => {
+                                                println!("Launched!");
+                                            }
+                                            Err(e) => {
+                                                println!("Failed to launch! {}", e);
+                                            }
+                                        }
                                         let _ =
                                             ctx.submit_command(SET_DISABLED, false, Target::Auto);
                                     });
@@ -77,17 +94,17 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                             }
                         })
                         .expand_width()
-                        .disabled_if(|data: &AppState, _| data.token.is_empty()),
+                        .disabled_if(|data: &AppState, _| data.token.trim().is_empty()),
                     1.,
                 )
                 .with_spacer(10.)
                 .with_child(
-                    IconButton::new(scl_gui_widgets::theme::icons::SETTINGS)
-                        .on_click(|ctx, _, _| {
+                    IconButton::new(scl_gui_widgets::theme::icons::SETTINGS).on_click(
+                        |ctx, _, _| {
                             ctx.submit_command(ENABLE_BACK_PAGE.with(true));
                             ctx.submit_command(PUSH_PAGE.with("setting"));
-                        })
-                        .disabled_if(|data: &AppState, _| !data.ip.is_empty()),
+                        },
+                    ),
                 )
                 .must_fill_main_axis(true),
         )
@@ -104,8 +121,22 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_child(label::new("使用 WinTUN 而非 WinTAP"))
         .with_spacer(5.)
         .with_child(ToggleSwitch::new().lens(AppState::use_tun))
+        // .with_spacer(10.)
+        // .with_child(label::new("发生错误时自动重启"))
+        // .with_spacer(5.)
+        // .with_child(ToggleSwitch::new().lens(AppState::auto_restart))
+        .with_spacer(10.)
+        .with_child(label::new("关于"))
+        .with_spacer(10.)
+        .with_child(label::new("HiPer Bridge v0.0.3"))
+        .with_child(label::new("轻量级 HiPer Plus 启动器"))
+        .with_child(label::new("By SteveXMH"))
         .cross_axis_alignment(widget::CrossAxisAlignment::Fill)
         .padding((10., 10.))
+        .scroll()
+        .vertical()
+        .expand()
+        .disabled_if(|data: &AppState, _| !data.ip.is_empty())
         .boxed()
 }
 
