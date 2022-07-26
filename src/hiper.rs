@@ -208,6 +208,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let mut child = Command::new(hiper_plus_path);
 
     if has_token {
+        child.arg("-T");
         child.arg("-t");
         child.arg(token);
     }
