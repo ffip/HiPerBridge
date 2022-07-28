@@ -24,56 +24,56 @@ static HIPER_PROCESS: AtomicU32 = AtomicU32::new(0);
 static HAS_UPDATED: AtomicBool = AtomicBool::new(false);
 static SPAWNED_PROCESSES: Mutex<Option<Vec<u32>>> = Mutex::new(None);
 
-fn check_tap_installed() -> bool {
-    unsafe {
-        let mut drivers = Vec::with_capacity(512);
-        let mut lpcb_needed = 0;
-        K32EnumDeviceDrivers(
-            drivers.as_mut_ptr(),
-            drivers.capacity() as _,
-            &mut lpcb_needed,
-        )
-        .unwrap();
-        if lpcb_needed > drivers.capacity() as _ {
-            drivers = Vec::with_capacity(lpcb_needed as _);
-            K32EnumDeviceDrivers(
-                drivers.as_mut_ptr(),
-                drivers.capacity() as _,
-                &mut lpcb_needed,
-            )
-            .unwrap();
-        }
-        drivers.set_len(lpcb_needed as _);
-        let mut filename = vec![0; 256];
-        for driver_handle in drivers {
-            let strlen = K32GetDeviceDriverBaseNameW(driver_handle, &mut filename) as usize;
-            let filename = String::from_utf16_lossy(&filename[..strlen]);
-            if filename.ends_with("tap0901.sys") {
-                return true;
-            }
-        }
-    }
-    false
-}
+// fn check_tap_installed() -> bool {
+//     unsafe {
+//         let mut drivers = Vec::with_capacity(512);
+//         let mut lpcb_needed = 0;
+//         K32EnumDeviceDrivers(
+//             drivers.as_mut_ptr(),
+//             drivers.capacity() as _,
+//             &mut lpcb_needed,
+//         )
+//         .unwrap();
+//         if lpcb_needed > drivers.capacity() as _ {
+//             drivers = Vec::with_capacity(lpcb_needed as _);
+//             K32EnumDeviceDrivers(
+//                 drivers.as_mut_ptr(),
+//                 drivers.capacity() as _,
+//                 &mut lpcb_needed,
+//             )
+//             .unwrap();
+//         }
+//         drivers.set_len(lpcb_needed as _);
+//         let mut filename = vec![0; 256];
+//         for driver_handle in drivers {
+//             let strlen = K32GetDeviceDriverBaseNameW(driver_handle, &mut filename) as usize;
+//             let filename = String::from_utf16_lossy(&filename[..strlen]);
+//             if filename.ends_with("tap0901.sys") {
+//                 return true;
+//             }
+//         }
+//     }
+//     false
+// }
 
-enum Arch {
-    X86,
-    X64,
-    ARM64,
-}
+// enum Arch {
+//     X86,
+//     X64,
+//     ARM64,
+// }
 
-fn get_system_arch() -> Arch {
-    unsafe {
-        let mut info: SYSTEM_INFO = Default::default();
-        GetSystemInfo(&mut info);
-        match info.Anonymous.Anonymous.wProcessorArchitecture.0 {
-            0 => Arch::X86,
-            12 => Arch::ARM64,
-            9 => Arch::X64,
-            _ => unreachable!(),
-        }
-    }
-}
+// fn get_system_arch() -> Arch {
+//     unsafe {
+//         let mut info: SYSTEM_INFO = Default::default();
+//         GetSystemInfo(&mut info);
+//         match info.Anonymous.Anonymous.wProcessorArchitecture.0 {
+//             0 => Arch::X86,
+//             12 => Arch::ARM64,
+//             9 => Arch::X64,
+//             _ => unreachable!(),
+//         }
+//     }
+// }
 
 pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool) {
     std::thread::spawn(move || {
@@ -119,13 +119,13 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
 
     std::fs::create_dir_all(&hiper_dir_path).context("无法创建 HiPer 安装目录")?;
 
-    if !use_tun && wintun_path.exists() {
-        std::fs::rename(&wintun_path, &wintun_disabled_path).context("无法禁用 WinTUN")?;
-    } else if use_tun && wintun_disabled_path.exists() {
-        std::fs::rename(&wintun_disabled_path, &wintun_path).context("无法启用 WinTUN")?;
-    }
+//     if !use_tun && wintun_path.exists() {
+//         std::fs::rename(&wintun_path, &wintun_disabled_path).context("无法禁用 WinTUN")?;
+//     } else if use_tun && wintun_disabled_path.exists() {
+//         std::fs::rename(&wintun_disabled_path, &wintun_path).context("无法启用 WinTUN")?;
+//     }
 
-    if use_tun {
+//     if use_tun {
         if !wintun_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载安装 WinTUN", Target::Auto);
             let res = tinyget::get(
@@ -135,24 +135,24 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
             .context("无法下载 WinTUN")?;
             std::fs::write(&wintun_path, res.as_bytes()).context("无法安装 WinTUN")?;
         }
-    } else if !check_tap_installed() {
-        if !tap_path.exists() {
-            let _ = ctx.submit_command(SET_START_TEXT, "正在下载 WinTAP", Target::Auto);
-            let res = tinyget::get(
-                "https://gitcode.net/to/hiper/-/raw/plus/windows/tap-windows-9.21.2.exe",
-            )
-            .send()
-            .context("无法下载 WinTAP 安装程序")?;
-            std::fs::write(&tap_path, res.as_bytes()).context("无法写入 WinTAP 安装程序！")?;
-        }
-        let _ = ctx.submit_command(SET_START_TEXT, "正在安装 WinTAP", Target::Auto);
+//     } else if !check_tap_installed() {
+//         if !tap_path.exists() {
+//             let _ = ctx.submit_command(SET_START_TEXT, "正在下载 WinTAP", Target::Auto);
+//             let res = tinyget::get(
+//                 "https://gitcode.net/to/hiper/-/raw/plus/windows/tap-windows-9.21.2.exe",
+//             )
+//             .send()
+//             .context("无法下载 WinTAP 安装程序")?;
+//             std::fs::write(&tap_path, res.as_bytes()).context("无法写入 WinTAP 安装程序！")?;
+//         }
+//         let _ = ctx.submit_command(SET_START_TEXT, "正在安装 WinTAP", Target::Auto);
 
-        let c = Command::new(tap_path)
-            .arg("/S")
-            .status()
-            .context("无法运行 WinTAP 安装程序")?;
-        c.code().context("无法安装 WinTAP")?;
-    }
+//         let c = Command::new(tap_path)
+//             .arg("/S")
+//             .status()
+//             .context("无法运行 WinTAP 安装程序")?;
+//         c.code().context("无法安装 WinTAP")?;
+//     }
 
     let _update_available = false;
 
