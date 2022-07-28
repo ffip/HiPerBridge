@@ -75,10 +75,12 @@ static SPAWNED_PROCESSES: Mutex<Option<Vec<u32>>> = Mutex::new(None);
 //     }
 // }
 
-pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool) {
+// pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool) {
+pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String) {
     std::thread::spawn(move || {
         let _ = ctx.submit_command(SET_DISABLED, true, Target::Auto);
-        match run_hiper(ctx.to_owned(), token, use_tun) {
+//        match run_hiper(ctx.to_owned(), token, use_tun) {
+        match run_hiper(ctx.to_owned(), token) {
             Ok(_) => {
                 println!("Launched!");
             }
@@ -102,7 +104,9 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
     Ok(hiper_dir_path)
 }
 
-pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
+
+// pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
+pub fn run_hiper(ctx: ExtEventSink, token: String) -> DynResult {
     println!("Launching hiper using token {}", token);
 
     let has_token = !token.is_empty();
