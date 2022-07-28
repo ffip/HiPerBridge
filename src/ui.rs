@@ -98,10 +98,11 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                 data.token_modified = false;
                             }
                             let token = data.inner_token.to_owned();
-                            let use_tun = data.use_tun;
+//                             let use_tun = data.use_tun;
                             match data.start_button {
                                 "启动" => {
-                                    run_hiper_in_thread(ctx, token, use_tun);
+//                                     run_hiper_in_thread(ctx, token, use_tun);
+                                    run_hiper_in_thread(ctx, token);
                                 }
                                 "关闭" => {
                                     std::thread::spawn(move || {
@@ -144,14 +145,14 @@ fn main_page() -> Box<dyn Widget<AppState>> {
 fn setting_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
         .with_child(label::new("选项"))
-        .with_spacer(10.)
-        .with_child(label::new("使用 WinTUN 而非 WinTAP"))
-        .with_spacer(5.)
-        .with_child(
-            ToggleSwitch::new()
-                .lens(AppState::use_tun)
-                .disabled_if(|data: &AppState, _| !data.ip.is_empty()),
-        )
+//         .with_spacer(10.)
+//         .with_child(label::new("使用 WinTUN 而非 WinTAP"))
+//         .with_spacer(5.)
+//         .with_child(
+//             ToggleSwitch::new()
+//                 .lens(AppState::use_tun)
+//                 .disabled_if(|data: &AppState, _| !data.ip.is_empty()),
+//         )
         .with_spacer(10.)
         .with_child(label::new("发生错误时自动重启"))
         .with_spacer(5.)
