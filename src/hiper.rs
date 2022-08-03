@@ -114,7 +114,9 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let tap_path = hiper_dir_path.join("tap-windows.exe");
     let wintun_path = hiper_dir_path.join("wintun.dll");
     let wintun_disabled_path = hiper_dir_path.join("wintun.dll.disabled");
-    let hiper_plus_path = hiper_dir_path.join("hiper.exe");
+    let hiper_path = hiper_dir_path.join("hiper.exe");
+    let conf_path = hiper_dir_path.join(token);
+    conf_path = conf_path.join(".yml");
 
     std::fs::create_dir_all(&hiper_dir_path).context("无法创建 HiPer 安装目录")?;
 
@@ -156,19 +158,19 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let _update_available = false;
 
     if !HAS_UPDATED.load(std::sync::atomic::Ordering::SeqCst) {
-        if hiper_plus_path.exists() {
+        if hiper_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在检查 HiPer 并更新", Target::Auto);
         } else {
             let _ = ctx.submit_command(SET_START_TEXT, "正在安装 HiPer", Target::Auto);
         }
         let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/master/windows-amd64/hiper.exe")
             .send()
-            .context("无法下载 HiPer Plus 程序")?;
+            .context("无法下载 HiPer 程序")?;
         println!("HPR downloaded, size {}", res.as_bytes().len());
 
         loop {
-            std::fs::write(&hiper_plus_path, res.as_bytes()).context("无法安装 HiPer Plus 程序")?;
-            let meta = hiper_plus_path
+            std::fs::write(&hiper_path, res.as_bytes()).context("无法安装 HiPer 程序")?;
+            let meta = hiper_path
                 .metadata()
                 .context("无法校验 HiPer 文件正确性")?;
             if meta.len() == res.as_bytes().len() as u64 {
@@ -177,16 +179,42 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
         }
         }
 
+        if conf_path.exists() {
+            let _ = ctx.submit_command(SET_START_TEXT, "正在检查 HiPer 配置文件", Target::Auto);
+        } else {
+            let _ = ctx.submit_command(SET_START_TEXT, "正在更新 HiPer 配置文件", Target::Auto);
+        }
+
+        let cert_addr = "https://cert.mcer.cn/";
+        cert_addr.join(token);
+        cert_addr.join(".yml");
+
+        let res = tinyget::get(cert_addr)
+            .send()
+            .context("无法更新 HiPer 配置文件")?;
+        println!("HPR Env downloaded, size {}", res.as_bytes().len());
+
+        loop {
+            std::fs::write(&hiper_env_path, res.as_bytes())
+                .context("无法更新 HiPer 配置文件")?;
+
+            let meta = hiper_env_path
+                .metadata()
+                .context("无法校验 HiPer 文件正确性")?;
+            if meta.len() == res.as_bytes().len() as u64 {
+                break;
+            }
+
         HAS_UPDATED.store(true, std::sync::atomic::Ordering::SeqCst);
     }
 
     let _ = ctx.submit_command(SET_START_TEXT, "正在启动 HiPer", Target::Auto);
 
-    let mut child = Command::new(hiper_plus_path);
-    token +=".yml"
+    let mut child = Command::new(hiper_path);
 
     if has_token {
-        child.arg("-config");
+        child.arg("-T");
+        child.arg("-t");
         child.arg(token);
     }
 
@@ -200,7 +228,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
             .stderr(Stdio::piped())
             .creation_flags(0x08000000)
             .spawn()
-            .context("无法启动 HiPer Plus")?;
+            .context("无法启动 HiPer")?;
 
         let stdout = child.stdout.take().context("无法获取 HiPer 输出流")?;
         let mut stdout = BufReader::new(stdout);
