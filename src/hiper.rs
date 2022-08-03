@@ -114,8 +114,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let tap_path = hiper_dir_path.join("tap-windows.exe");
     let wintun_path = hiper_dir_path.join("wintun.dll");
     let wintun_disabled_path = hiper_dir_path.join("wintun.dll.disabled");
-    let hiper_plus_path = hiper_dir_path.join("hpr.exe");
-    let hiper_env_path = hiper_dir_path.join("hpr_env.exe");
+    let hiper_plus_path = hiper_dir_path.join("hiper.exe");
 
     std::fs::create_dir_all(&hiper_dir_path).context("无法创建 HiPer 安装目录")?;
 
@@ -129,7 +128,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
         if !wintun_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载安装 WinTUN", Target::Auto);
             let res = tinyget::get(
-                "https://gitcode.net/to/hiper/-/raw/plus/windows/wintun/amd64/wintun.dll",
+                "https://gitcode.net/to/hiper/-/raw/master/windows-amd64/wintun.dll",
             )
             .send()
             .context("无法下载 WinTUN")?;
@@ -139,7 +138,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
         if !tap_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载 WinTAP", Target::Auto);
             let res = tinyget::get(
-                "https://gitcode.net/to/hiper/-/raw/plus/windows/tap-windows-9.21.2.exe",
+                "https://gitcode.net/to/hiper/-/raw/master/tap-windows-9.21.2.exe",
             )
             .send()
             .context("无法下载 WinTAP 安装程序")?;
@@ -162,7 +161,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
         } else {
             let _ = ctx.submit_command(SET_START_TEXT, "正在安装 HiPer", Target::Auto);
         }
-        let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/plus/windows/64bit/hpr.exe")
+        let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/master/windows-amd64/hiper.exe")
             .send()
             .context("无法下载 HiPer Plus 程序")?;
         println!("HPR downloaded, size {}", res.as_bytes().len());
@@ -176,28 +175,6 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
                 break;
             }
         }
-
-        if hiper_plus_path.exists() {
-            let _ = ctx.submit_command(SET_START_TEXT, "正在检查 HiPer Env 并更新", Target::Auto);
-        } else {
-            let _ = ctx.submit_command(SET_START_TEXT, "正在安装 HiPer Env", Target::Auto);
-        }
-
-        let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/plus/windows/64bit/hpr_env.exe")
-            .send()
-            .context("无法下载 HiPer Plus Env 程序")?;
-        println!("HPR Env downloaded, size {}", res.as_bytes().len());
-
-        loop {
-            std::fs::write(&hiper_env_path, res.as_bytes())
-                .context("无法安装 HiPer Plus Env 程序")?;
-
-            let meta = hiper_env_path
-                .metadata()
-                .context("无法校验 HiPer Plus Env 文件正确性")?;
-            if meta.len() == res.as_bytes().len() as u64 {
-                break;
-            }
         }
 
         HAS_UPDATED.store(true, std::sync::atomic::Ordering::SeqCst);
@@ -206,10 +183,10 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let _ = ctx.submit_command(SET_START_TEXT, "正在启动 HiPer", Target::Auto);
 
     let mut child = Command::new(hiper_plus_path);
+    token +=".yml"
 
     if has_token {
-        child.arg("-T");
-        child.arg("-t");
+        child.arg("-config");
         child.arg(token);
     }
 
