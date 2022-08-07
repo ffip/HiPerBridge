@@ -11,9 +11,10 @@ use std::{
     },
 };
 
-use crate::{ui::*, DynResult};
+use crate::{ui::*, utils::write_file_safe, DynResult};
 use anyhow::Context;
 use druid::{ExtEventSink, Target};
+use path_absolutize::Absolutize;
 use windows::Win32::System::{
     ProcessStatus::{K32EnumDeviceDrivers, K32GetDeviceDriverBaseNameW},
     SystemInformation::{GetSystemInfo, SYSTEM_INFO},
@@ -54,6 +55,14 @@ fn check_tap_installed() -> bool {
         }
     }
     false
+}
+
+pub fn get_log_file_path() -> DynResult<PathBuf> {
+    use path_absolutize::*;
+    Ok(get_hiper_dir()?
+        .join("latest.log")
+        .absolutize()
+        .map(|x| x.to_path_buf())?)
 }
 
 enum Arch {
@@ -110,6 +119,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let _ = ctx.submit_command(SET_WARNING, "".to_string(), Target::Auto);
 
     let hiper_dir_path = get_hiper_dir()?;
+    let certs_dir_path = hiper_dir_path.join("certs");
 
     let tap_path = hiper_dir_path.join("tap-windows.exe");
     let wintun_path = hiper_dir_path.join("wintun.dll");
@@ -118,6 +128,20 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let hiper_env_path = hiper_dir_path.join("hpr_env.exe");
 
     std::fs::create_dir_all(&hiper_dir_path).context("无法创建 HiPer 安装目录")?;
+    std::fs::create_dir_all(&certs_dir_path).context("无法创建 HiPer 凭证证书目录")?;
+
+    let cert_path = certs_dir_path.join(format!("{}.yml", token));
+    let cert_path = cert_path
+        .absolutize()
+        .context("无法获取凭证证书所在绝对目录")?;
+
+    if !cert_path.is_file() {
+        let _ = ctx.submit_command(SET_START_TEXT, "正在获取凭证证书", Target::Auto);
+        let res = tinyget::get(format!("https://cert.mcer.cn/{}.yml", token))
+            .send()
+            .context("无法获取凭证证书，这有可能是因为下载超时或者是你的凭证无效")?;
+        write_file_safe(&wintun_path, res.as_bytes()).context("无法保存凭证证书")?;
+    }
 
     if !use_tun && wintun_path.exists() {
         std::fs::rename(&wintun_path, &wintun_disabled_path).context("无法禁用 WinTUN")?;
@@ -133,7 +157,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
             )
             .send()
             .context("无法下载 WinTUN")?;
-            std::fs::write(&wintun_path, res.as_bytes()).context("无法安装 WinTUN")?;
+            write_file_safe(&wintun_path, res.as_bytes()).context("无法安装 WinTUN")?;
         }
     } else if !check_tap_installed() {
         if !tap_path.exists() {
@@ -143,7 +167,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
             )
             .send()
             .context("无法下载 WinTAP 安装程序")?;
-            std::fs::write(&tap_path, res.as_bytes()).context("无法写入 WinTAP 安装程序！")?;
+            write_file_safe(&tap_path, res.as_bytes()).context("无法写入 WinTAP 安装程序！")?;
         }
         let _ = ctx.submit_command(SET_START_TEXT, "正在安装 WinTAP", Target::Auto);
 
@@ -167,15 +191,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
             .context("无法下载 HiPer Plus 程序")?;
         println!("HPR downloaded, size {}", res.as_bytes().len());
 
-        loop {
-            std::fs::write(&hiper_plus_path, res.as_bytes()).context("无法安装 HiPer Plus 程序")?;
-            let meta = hiper_plus_path
-                .metadata()
-                .context("无法校验 HiPer 文件正确性")?;
-            if meta.len() == res.as_bytes().len() as u64 {
-                break;
-            }
-        }
+        write_file_safe(&hiper_plus_path, res.as_bytes()).context("无法安装 HiPer Plus 程序")?;
 
         if hiper_plus_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在检查 HiPer Env 并更新", Target::Auto);
@@ -188,17 +204,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
             .context("无法下载 HiPer Plus Env 程序")?;
         println!("HPR Env downloaded, size {}", res.as_bytes().len());
 
-        loop {
-            std::fs::write(&hiper_env_path, res.as_bytes())
-                .context("无法安装 HiPer Plus Env 程序")?;
-
-            let meta = hiper_env_path
-                .metadata()
-                .context("无法校验 HiPer Plus Env 文件正确性")?;
-            if meta.len() == res.as_bytes().len() as u64 {
-                break;
-            }
-        }
+        write_file_safe(&hiper_env_path, res.as_bytes()).context("无法安装 HiPer Plus Env 程序")?;
 
         HAS_UPDATED.store(true, std::sync::atomic::Ordering::SeqCst);
     }
@@ -208,9 +214,8 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
     let mut child = Command::new(hiper_plus_path);
 
     if has_token {
-        child.arg("-T");
-        child.arg("-t");
-        child.arg(token);
+        child.arg("-config");
+        child.arg(cert_path.to_path_buf());
     }
 
     let (sender, reciver) = oneshot::channel::<String>();
@@ -247,7 +252,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
             .truncate(true)
             .write(true)
             .create(true)
-            .open("latest.log")
+            .open(get_log_file_path()?)
             .context("无法打开日志文件 (latest.log)!");
         let mut sender = Some(sender);
         let mut sent = false;
@@ -281,13 +286,17 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
                     } else if let Ok(log_line) =
                         crate::log_parser::parse_log_line(line).map(|x| x.1)
                     {
-                        if log_line.trim() == "xxx user token has been expired xxx" {
-                            let _ = ctx_c.submit_command(
-                                SET_WARNING,
-                                "警告：凭证已过期！请使用新的凭证密钥重试！".to_string(),
-                                Target::Auto,
-                            );
-                            sent = false;
+                        match log_line.trim() {
+                            "xxx user token has been expired xxx"
+                            | "hiper certificate for this host is expired" => {
+                                let _ = ctx_c.submit_command(
+                                    SET_WARNING,
+                                    "警告：凭证已过期！请使用新的凭证密钥重试！".to_string(),
+                                    Target::Auto,
+                                );
+                                sent = false;
+                            }
+                            _ => {}
                         }
                     }
                     if no_more_logs {

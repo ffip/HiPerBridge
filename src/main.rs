@@ -11,6 +11,7 @@ mod hiper;
 mod log_parser;
 mod open_url;
 mod ui;
+mod utils;
 
 pub type DynResult<T = ()> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
