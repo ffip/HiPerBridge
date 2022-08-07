@@ -34,7 +34,7 @@ pub const REQUEST_RESTART: Selector = Selector::new("request-restart");
 fn main_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
         // .with_child(label::new("HiPer Bridge").with_font(typography::SUBHEADER))
-        .with_child(label::new("迅若惊雷 x 安如磐石 x 轻若鸿羽"))
+        .with_child(label::new("轻快若风 x 安如磐石 - 最佳跨区域组网方案"))
         .with_spacer(10.)
         .with_flex_child(
             label::dynamic(|data: &AppState, _| data.warning.to_owned())
