@@ -140,7 +140,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool) -> DynResult {
         let res = tinyget::get(format!("https://cert.mcer.cn/{}.yml", token))
             .send()
             .context("无法获取凭证证书，这有可能是因为下载超时或者是你的凭证无效")?;
-        write_file_safe(&wintun_path, res.as_bytes()).context("无法保存凭证证书")?;
+        write_file_safe(&cert_path, res.as_bytes()).context("无法保存凭证证书")?;
     }
 
     if !use_tun && wintun_path.exists() {
