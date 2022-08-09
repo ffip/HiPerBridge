@@ -212,7 +212,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
         if !wintun_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载安装 WinTUN", Target::Auto);
             let res =
-                tinyget::get("https://gitcode.net/to/hiper/-/raw/master/windows-amd64/wintun.dll")
+                tinyget::get(&format!("https://gitcode.net/to/hiper/-/raw/master/{}/wintun.dll", get_system_arch()))
                     .send()
                     .context("无法下载 WinTUN")?;
             write_file_safe(&wintun_path, res.as_bytes()).context("无法安装 WinTUN")?;
