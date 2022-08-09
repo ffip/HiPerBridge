@@ -193,6 +193,9 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
         let res = tinyget::get(format!("https://cert.mcer.cn/{}.yml", token))
             .send()
             .context("无法获取凭证证书，这有可能是因为下载超时或者是你的凭证无效")?;
+        if res.status_code != 200 {
+            anyhow::bail!("无法获取凭证证书，这有可能是因为下载超时或者是你的凭证无效");
+        }
         let mut cert_data = res
             .as_str()
             .context("无法正确解码凭证证书数据，这有可能是下载出错了")?
@@ -211,10 +214,12 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
         #[cfg(windows)]
         if !wintun_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载安装 WinTUN", Target::Auto);
-            let res =
-                tinyget::get(&format!("https://gitcode.net/to/hiper/-/raw/master/{}/wintun.dll", get_system_arch()))
-                    .send()
-                    .context("无法下载 WinTUN")?;
+            let res = tinyget::get(&dbg!(format!(
+                "https://gitcode.net/to/hiper/-/raw/master/{}/wintun.dll",
+                get_system_arch()
+            )))
+            .send()
+            .context("无法下载 WinTUN")?;
             write_file_safe(&wintun_path, res.as_bytes()).context("无法安装 WinTUN")?;
         }
     } else {
@@ -272,16 +277,20 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                     let found = path.starts_with(&arch) && path.ends_with("hiper.exe");
                     #[cfg(not(windows))]
                     let found = path.starts_with(&arch) && path.ends_with("hiper");
-                    if found && hash != current_hash {
-                        let _ = ctx.submit_command(SET_START_TEXT, "正在更新 HiPer", Target::Auto);
-
-                        let res = tinyget::get(download_url.as_str())
-                            .send()
-                            .context("无法下载 HiPer 程序")?;
-                        println!("HPR downloaded, size {}", res.as_bytes().len());
-
-                        write_file_safe(&hiper_plus_path, res.as_bytes())
-                            .context("无法更新 HiPer 程序")?;
+                    if found {
+                        println!("Comparing {} {} {} {}", arch, path, hash, current_hash);
+                        if hash != current_hash {
+                            let _ = ctx.submit_command(SET_START_TEXT, "正在更新 HiPer", Target::Auto);
+    
+                            let res = tinyget::get(download_url.as_str())
+                                .send()
+                                .context("无法下载 HiPer 程序")?;
+                            println!("HPR downloaded, size {}", res.as_bytes().len());
+    
+                            write_file_safe(&hiper_plus_path, res.as_bytes())
+                                .context("无法更新 HiPer 程序")?;
+                        }
+                        break;
                     }
                 }
             }
@@ -332,6 +341,23 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
         if debug_mode {
             unsafe {
                 windows::Win32::System::Console::AllocConsole();
+                // 设置控制台关闭指令
+                // 阻止调试控制台的直接关闭进程
+                use windows::Win32::System::Console::*;
+                unsafe extern "system" fn console_ctrl_handler(
+                    event: u32,
+                ) -> windows::Win32::Foundation::BOOL {
+                    match event {
+                        CTRL_CLOSE_EVENT | CTRL_C_EVENT | CTRL_BREAK_EVENT | CTRL_LOGOFF_EVENT
+                        | CTRL_SHUTDOWN_EVENT => {
+                            println!("[WARN] 请不要直接停止控制台窗口！请点击主窗口的关闭按钮关闭 HiPer Bridge！");
+                            stop_hiper_directly();
+                        }
+                        _ => {}
+                    }
+                    true.into()
+                }
+                SetConsoleCtrlHandler(Some(console_ctrl_handler), true);
             }
         }
 
@@ -349,8 +375,6 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
             }
         }
         HIPER_PROCESS.store(child.id(), std::sync::atomic::Ordering::SeqCst);
-
-        println!("{:?}", child);
 
         // Start Logging
         let mut logger_file = OpenOptions::new()
@@ -393,9 +417,19 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                                 sent = true;
                             }
                         }
-                    } else if let Some((level, msg)) = crate::log_parser::try_get_log_line(line) {
+                    } else if let Some((level, msg, error)) =
+                        crate::log_parser::try_get_log_line(line)
+                    {
                         if &level == "error" {
-                            match msg.as_str() {
+                            match error.as_str() {
+                                "hiper certificate for this host is expired" => {
+                                    let _ = ctx_c.submit_command(
+                                        SET_WARNING,
+                                        "警告：凭证已过期！请使用新的凭证密钥重试！".to_string(),
+                                        Target::Auto,
+                                    );
+                                    sent = false;
+                                }
                                 "Failed to get a tun/tap device" => {
                                     let _ = ctx_c.submit_command(
                                         SET_WARNING,
@@ -404,21 +438,14 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                                     );
                                     sent = false;
                                 }
-                                _ => {}
-                            }
-                        }
-                        if &level == "fatal" {
-                            match msg.as_str() {
-                                "xxx user token has been expired xxx"
-                                | "hiper certificate for this host is expired" => {
+                                _ => {
                                     let _ = ctx_c.submit_command(
                                         SET_WARNING,
-                                        "警告：凭证已过期！请使用新的凭证密钥重试！".to_string(),
+                                        "错误：HiPer 启动失败！请检查 latest.log 日志文件确认问题！".to_string(),
                                         Target::Auto,
                                     );
                                     sent = false;
                                 }
-                                _ => {}
                             }
                         }
                     }
@@ -445,7 +472,14 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                 windows::Win32::System::Console::FreeConsole();
             }
         }
+        println!("[WARN] HiPer 已退出！");
         if sent {
+            let _ = ctx_c.submit_command(
+                SET_WARNING,
+                "警告：HiPer Bridge 意外退出！5 秒后将会自动重启！\n　　如需阻止自动重启，请点击关闭按钮！".to_string(),
+                Target::Auto,
+            );
+            std::thread::sleep(std::time::Duration::from_secs(5));
             let _ = ctx_c.submit_command(REQUEST_RESTART, (), Target::Auto);
         }
         Ok(())
@@ -456,13 +490,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
     if ip.is_empty() {
         let _ = ctx.submit_command(SET_START_TEXT, "启动", Target::Auto);
         stop_hiper_directly();
-        if has_token {
-            let _ = ctx.submit_command(
-                SET_WARNING,
-                "错误：HiPer 启动失败！请检查 latest.log 日志文件确认问题！".to_string(),
-                Target::Auto,
-            );
-        } else {
+        if !has_token {
             let _ = ctx.submit_command(
                 SET_WARNING,
                 "错误：HiPer 入网失败！请检查凭证密钥是否填写正确！".to_string(),

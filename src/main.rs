@@ -13,10 +13,11 @@ mod open_url;
 mod ui;
 mod utils;
 
-pub type DynResult<T = ()> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+pub type DynResult<T = ()> = std::result::Result<T, anyhow::Error>;
 
 use app_state::AppState;
 use ui::*;
+
 #[cfg(windows)]
 use windows::Win32::UI::Shell::{IsUserAnAdmin, ShellExecuteW};
 #[cfg(windows)]
