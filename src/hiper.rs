@@ -15,6 +15,7 @@ use crate::{ui::*, utils::write_file_safe, DynResult};
 use anyhow::Context;
 use druid::{ExtEventSink, Target};
 use path_absolutize::Absolutize;
+#[cfg(windows)]
 use windows::Win32::System::{
     ProcessStatus::{K32EnumDeviceDrivers, K32GetDeviceDriverBaseNameW},
     SystemInformation::{GetSystemInfo, SYSTEM_INFO},
@@ -25,6 +26,7 @@ static HIPER_PROCESS: AtomicU32 = AtomicU32::new(0);
 static HAS_UPDATED: AtomicBool = AtomicBool::new(false);
 static SPAWNED_PROCESSES: Mutex<Option<Vec<u32>>> = Mutex::new(None);
 
+#[cfg(windows)]
 fn check_tap_installed() -> bool {
     unsafe {
         let mut drivers = Vec::with_capacity(512);
@@ -79,10 +81,23 @@ impl Display for Arch {
             Arch::X64 => f.write_str("windows-amd64"),
             Arch::ARM64 => f.write_str("windows-arm64"),
         }
+        #[cfg(unix)]
+        match self {
+            Arch::X86 => f.write_str("linux-386"),
+            Arch::X64 => f.write_str("linux-amd64"),
+            Arch::ARM64 => f.write_str("linux-arm64"),
+        }
+        #[cfg(osx)]
+        match self {
+            Arch::X86 => f.write_str("darwin-386"),
+            Arch::X64 => f.write_str("darwin-amd64"),
+            Arch::ARM64 => f.write_str("darwin-arm64"),
+        }
     }
 }
 
 fn get_system_arch() -> Arch {
+    #[cfg(windows)]
     unsafe {
         let mut info: SYSTEM_INFO = Default::default();
         GetSystemInfo(&mut info);
@@ -93,6 +108,16 @@ fn get_system_arch() -> Arch {
             _ => unreachable!(),
         }
     }
+    #[cfg(all(target_os = "linux", target_arch = "x86"))]
+    return Arch::X86;
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    return Arch::X64;
+    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+    return Arch::ARM64;
+    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+    return Arch::X64;
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    return Arch::ARM64;
 }
 
 pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bool) {
@@ -117,9 +142,18 @@ pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool, debu
 }
 
 pub fn get_hiper_dir() -> DynResult<PathBuf> {
-    let appdata = PathBuf::from_str(std::env!("APPDATA")).context("无法获取 APPDATA 环境变量")?;
-    let hiper_dir_path = appdata.join("hiper");
-    Ok(hiper_dir_path)
+    #[cfg(windows)]
+    {
+        let appdata =
+            PathBuf::from_str(&std::env::var("APPDATA").context("无法获取 APPDATA 环境变量")?)
+                .context("无法将 APPDATA 环境变量转换成路径")?;
+        let hiper_dir_path = appdata.join("hiper");
+        Ok(hiper_dir_path)
+    }
+    #[cfg(unix)]
+    {
+        Ok(PathBuf::from_str("/etc/hiper").context("无法将路径字符串转换成路径")?)
+    }
 }
 
 pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bool) -> DynResult {
@@ -174,6 +208,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
     }
 
     if use_tun {
+        #[cfg(windows)]
         if !wintun_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载安装 WinTUN", Target::Auto);
             let res =
@@ -182,22 +217,26 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                     .context("无法下载 WinTUN")?;
             write_file_safe(&wintun_path, res.as_bytes()).context("无法安装 WinTUN")?;
         }
-    } else if !check_tap_installed() {
-        if !tap_path.exists() {
-            let _ = ctx.submit_command(SET_START_TEXT, "正在下载 WinTAP", Target::Auto);
-            let res =
-                tinyget::get("https://gitcode.net/to/hiper/-/raw/master/tap-windows-9.21.2.exe")
-                    .send()
-                    .context("无法下载 WinTAP 安装程序")?;
-            write_file_safe(&tap_path, res.as_bytes()).context("无法写入 WinTAP 安装程序！")?;
-        }
-        let _ = ctx.submit_command(SET_START_TEXT, "正在安装 WinTAP", Target::Auto);
+    } else {
+        #[cfg(windows)]
+        if !check_tap_installed() {
+            if !tap_path.exists() {
+                let _ = ctx.submit_command(SET_START_TEXT, "正在下载 WinTAP", Target::Auto);
+                let res = tinyget::get(
+                    "https://gitcode.net/to/hiper/-/raw/master/tap-windows-9.21.2.exe",
+                )
+                .send()
+                .context("无法下载 WinTAP 安装程序")?;
+                write_file_safe(&tap_path, res.as_bytes()).context("无法写入 WinTAP 安装程序！")?;
+            }
+            let _ = ctx.submit_command(SET_START_TEXT, "正在安装 WinTAP", Target::Auto);
 
-        let c = Command::new(tap_path)
-            .arg("/S")
-            .status()
-            .context("无法运行 WinTAP 安装程序")?;
-        c.code().context("无法安装 WinTAP")?;
+            let c = Command::new(tap_path)
+                .arg("/S")
+                .status()
+                .context("无法运行 WinTAP 安装程序")?;
+            c.code().context("无法安装 WinTAP")?;
+        }
     }
 
     let _update_available = false;
@@ -446,6 +485,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
 }
 
 fn stop_process(pid: u32) {
+    #[cfg(windows)]
     unsafe {
         if let Ok(handle) = OpenProcess(PROCESS_ACCESS_RIGHTS(0x0001), false, pid) {
             TerminateProcess(handle, 0);

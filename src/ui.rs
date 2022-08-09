@@ -93,6 +93,15 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                     let _ = cb.set_contents(data.ip.to_owned());
                                 }
                             }
+                            #[cfg(unix)]
+                            {
+                                if let Ok(mut cb) = clipboard::x11_clipboard::X11ClipboardContext::<
+                                    clipboard::x11_clipboard::Clipboard,
+                                >::new()
+                                {
+                                    let _ = cb.set_contents(data.ip.to_owned());
+                                }
+                            }
                         }),
                 )
                 .cross_axis_alignment(widget::CrossAxisAlignment::End)

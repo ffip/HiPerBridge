@@ -17,11 +17,14 @@ pub type DynResult<T = ()> = std::result::Result<T, Box<dyn std::error::Error + 
 
 use app_state::AppState;
 use ui::*;
+#[cfg(windows)]
 use windows::Win32::UI::Shell::{IsUserAnAdmin, ShellExecuteW};
+#[cfg(windows)]
 use windows::{core::PCWSTR, w};
 
 fn main() {
     // Check if is admin
+    #[cfg(windows)]
     unsafe {
         if !IsUserAnAdmin().as_bool() {
             use std::os::windows::ffi::OsStrExt;
@@ -37,6 +40,14 @@ fn main() {
                 w!(""),
                 1,
             );
+            return;
+        }
+    }
+    #[cfg(unix)]
+    {
+        if !nix::unistd::getuid().is_root() {
+            println!("HiPer Bridge requires root user to run!");
+            println!("Use sudo/su to rerun to start as a root user!");
             return;
         }
     }
@@ -90,23 +101,16 @@ fn main() {
                 .disabled_if(|data, _| data.disabled),
         )
         .set_position({
-            #[cfg(windows)]
-            {
-                let monitors = Screen::get_monitors();
-                let screen = monitors.iter().find(|a| a.is_primary()).unwrap();
-                let screen_rect = screen.virtual_work_rect();
-                druid::Point::new(
-                    (screen_rect.width() - size.0) / 2.,
-                    (screen_rect.height() - size.1) / 2.,
-                )
-            }
-            #[cfg(not(windows))]
-            {
-                druid::Point::new(
-                    (screen_rect.width() - size.0) / 2.,
-                    (screen_rect.height() - size.1) / 2.,
-                )
-            }
+            let monitors = Screen::get_monitors();
+            let screen = monitors
+                .iter()
+                .find(|a| a.is_primary())
+                .unwrap_or_else(|| monitors.first().unwrap());
+            let screen_rect = screen.virtual_work_rect();
+            druid::Point::new(
+                (screen_rect.width() - size.0) / 2.,
+                (screen_rect.height() - size.1) / 2.,
+            )
         })
         .resizable(false)
         .window_size(size)
