@@ -43,6 +43,7 @@ pub struct AppState {
     pub warning: String,
     pub use_tun: bool,
     pub auto_restart: bool,
+    pub debug_mode: bool,
 }
 
 impl Default for AppState {
@@ -59,6 +60,7 @@ impl Default for AppState {
             run_time: 0,
             use_tun: true,
             auto_restart: true,
+            debug_mode: false,
         }
     }
 }

@@ -45,7 +45,7 @@ fn main() {
 
     load_config(&mut state);
 
-    let size = (280., 232. + 32.);
+    let size = (295., 232. + 32.);
 
     AppLauncher::with_window(
         WindowDesc::new(
@@ -67,7 +67,7 @@ fn main() {
                         let token = data.inner_token.to_owned();
                         let use_tun = data.use_tun;
                         let ctx = ctx.get_external_handle();
-                        run_hiper_in_thread(ctx, token, use_tun);
+                        run_hiper_in_thread(ctx, token, use_tun, data.debug_mode);
                     }
                 })
                 .on_notify(BACK_PAGE_CLICKED, |ctx, _, _| {

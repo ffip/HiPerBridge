@@ -13,7 +13,7 @@ use std::{fmt::Write, time::Duration};
 
 use crate::{
     app_state::{AppState, TimerTokenData},
-    hiper::{run_hiper_in_thread, stop_hiper},
+    hiper::{get_hiper_dir, run_hiper_in_thread, stop_hiper},
     open_url::open_url,
 };
 
@@ -71,7 +71,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                             let _ = write!(run_time_formated, "{:02}:{:02}", min, sec);
 
                             format!(
-                                "Hiper 正在运行！\n网络地址：{}\n运行时间：{}",
+                                "HiPer 正在运行！\n网络地址：{}\n运行时间：{}",
                                 data.ip, run_time_formated
                             )
                         }
@@ -95,9 +95,9 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                             }
                         }),
                 )
+                .cross_axis_alignment(widget::CrossAxisAlignment::End)
                 .show_if(|data: &AppState, _| !data.ip.is_empty()),
         )
-        .with_spacer(5.)
         .with_child(
             TextBox::new()
                 .with_placeholder("凭证密钥")
@@ -105,7 +105,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                 .on_change(|_, old_data, data, _| {
                     data.token_modified |= old_data.token != data.token;
                 })
-                .disabled_if(|data, _| !data.ip.is_empty()),
+                .show_if(|data, _| data.ip.is_empty()),
         )
         .with_spacer(10.)
         .with_child(
@@ -126,7 +126,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                             let use_tun = data.use_tun;
                             match data.start_button {
                                 "启动" => {
-                                    run_hiper_in_thread(ctx, token, use_tun);
+                                    run_hiper_in_thread(ctx, token, use_tun, data.debug_mode);
                                 }
                                 "关闭" => {
                                     std::thread::spawn(move || {
@@ -178,15 +178,33 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
                 .disabled_if(|data: &AppState, _| !data.ip.is_empty()),
         )
         .with_spacer(10.)
+        .with_child(label::new("显示 HiPer 调试窗口"))
+        .with_spacer(5.)
+        .with_child(
+            ToggleSwitch::new()
+                .lens(AppState::debug_mode)
+                .disabled_if(|data: &AppState, _| !data.ip.is_empty()),
+        )
+        .with_spacer(10.)
         .with_child(label::new("发生错误时自动重启"))
         .with_spacer(5.)
         .with_child(ToggleSwitch::new().lens(AppState::auto_restart))
         .with_spacer(10.)
+        .with_child(Button::new("打开 HiPer 安装目录").on_click(|_, _, _| {
+            if let Ok(hiper_dir) = get_hiper_dir() {
+                open_url(hiper_dir.to_string_lossy().to_string().as_str());
+            }
+        }))
+        .with_spacer(10.)
         .with_child(label::new("关于"))
         .with_spacer(10.)
-        .with_child(label::new("HiPer Bridge v0.0.5"))
-        .with_child(label::new("轻量级 HiPer Plus 启动器"))
+        .with_child(label::new("HiPer Bridge v0.0.6"))
+        .with_child(label::new("轻量级 HiPer 启动器"))
         .with_child(label::new("By SteveXMH"))
+        .with_spacer(10.)
+        .with_child(Button::new("爱发电").on_click(|_, _, _| {
+            open_url("https://afdian.net/@SteveXMH");
+        }))
         .with_spacer(10.)
         .with_child(label::new("HiPer / Matrix"))
         .with_child(label::new("一款轻量、敏捷、去中心化的跨区域组网系统"))
