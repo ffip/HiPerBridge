@@ -459,6 +459,8 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                                     sent = false;
                                 }
                             }
+                            std::thread::sleep(std::time::Duration::from_secs(5));
+                            let _ = ctx.submit_command(SET_WARNING, "".to_string(), Target::Auto);
                         }
                     }
                     if no_more_logs {
