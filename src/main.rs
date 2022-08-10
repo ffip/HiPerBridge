@@ -57,6 +57,24 @@ fn main() {
 
     load_config(&mut state);
 
+    if state.kill_hiper_when_start {
+        #[cfg(windows)]
+        {
+            let _ = std::process::Command::new("taskkill.exe")
+                .arg("/F")
+                .arg("/IM")
+                .arg("hiper.exe")
+                .status();
+        }
+        #[cfg(unix)]
+        {
+            let _ = std::process::Command::new("kill")
+                .arg("-9")
+                .arg("hiper")
+                .status();
+        }
+    }
+
     let size = (295., 232. + 32.);
 
     AppLauncher::with_window(

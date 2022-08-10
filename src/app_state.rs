@@ -44,6 +44,7 @@ pub struct AppState {
     pub use_tun: bool,
     pub auto_restart: bool,
     pub debug_mode: bool,
+    pub kill_hiper_when_start: bool,
 }
 
 impl Default for AppState {
@@ -61,6 +62,7 @@ impl Default for AppState {
             use_tun: true,
             auto_restart: true,
             debug_mode: false,
+            kill_hiper_when_start: true,
         }
     }
 }

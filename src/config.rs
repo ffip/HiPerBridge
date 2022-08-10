@@ -30,6 +30,10 @@ pub fn save_config(app_state: &AppState) {
                 "debug_mode".into(),
                 JsonValue::Boolean(app_state.debug_mode),
             );
+            data_hashmap.insert(
+                "kill_hiper_when_start".into(),
+                JsonValue::Boolean(app_state.kill_hiper_when_start),
+            );
 
             let data = JsonValue::Object(data_hashmap);
 
@@ -69,6 +73,12 @@ pub fn load_config(app_state: &mut AppState) {
                         .map(|x| x.get::<bool>().copied().unwrap_or(false))
                     {
                         app_state.debug_mode = debug_mode;
+                    }
+                    if let Some(kill_hiper_when_start) = data
+                        .get("kill_hiper_when_start")
+                        .map(|x| x.get::<bool>().copied().unwrap_or(true))
+                    {
+                        app_state.kill_hiper_when_start = kill_hiper_when_start;
                     }
                 }
             }

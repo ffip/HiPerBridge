@@ -199,6 +199,12 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_spacer(5.)
         .with_child(ToggleSwitch::new().lens(AppState::auto_restart))
         .with_spacer(10.)
+        .with_child(label::new(
+            "启动 HiPer Bridge 时关闭先前可能遗留的 HiPer 程序",
+        ))
+        .with_spacer(5.)
+        .with_child(ToggleSwitch::new().lens(AppState::kill_hiper_when_start))
+        .with_spacer(10.)
         .with_child(Button::new("打开 HiPer 安装目录").on_click(|_, _, _| {
             if let Ok(hiper_dir) = get_hiper_dir() {
                 open_url(hiper_dir.to_string_lossy().to_string().as_str());

@@ -18,7 +18,7 @@ use path_absolutize::Absolutize;
 #[cfg(windows)]
 use windows::Win32::System::{
     ProcessStatus::{K32EnumDeviceDrivers, K32GetDeviceDriverBaseNameW},
-    SystemInformation::{GetSystemInfo, SYSTEM_INFO},
+    SystemInformation::{GetNativeSystemInfo, SYSTEM_INFO},
     Threading::{OpenProcess, TerminateProcess, WaitForSingleObject, PROCESS_ACCESS_RIGHTS},
 };
 
@@ -100,7 +100,7 @@ fn get_system_arch() -> Arch {
     #[cfg(windows)]
     unsafe {
         let mut info: SYSTEM_INFO = Default::default();
-        GetSystemInfo(&mut info);
+        GetNativeSystemInfo(&mut info);
         match info.Anonymous.Anonymous.wProcessorArchitecture.0 {
             0 => Arch::X86,
             12 => Arch::ARM64,
@@ -280,13 +280,14 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                     if found {
                         println!("Comparing {} {} {} {}", arch, path, hash, current_hash);
                         if hash != current_hash {
-                            let _ = ctx.submit_command(SET_START_TEXT, "正在更新 HiPer", Target::Auto);
-    
+                            let _ =
+                                ctx.submit_command(SET_START_TEXT, "正在更新 HiPer", Target::Auto);
+
                             let res = tinyget::get(download_url.as_str())
                                 .send()
                                 .context("无法下载 HiPer 程序")?;
                             println!("HPR downloaded, size {}", res.as_bytes().len());
-    
+
                             write_file_safe(&hiper_plus_path, res.as_bytes())
                                 .context("无法更新 HiPer 程序")?;
                         }
@@ -358,6 +359,9 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                     true.into()
                 }
                 SetConsoleCtrlHandler(Some(console_ctrl_handler), true);
+                println!(
+                    "[WARN] 请不要直接关闭控制台窗口！请点击主窗口的关闭按钮关闭 HiPer Bridge！"
+                );
             }
         }
 
