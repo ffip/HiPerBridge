@@ -434,6 +434,14 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                                     );
                                     sent = false;
                                 }
+                                "Failed to open udp listener" => {
+                                    let _ = ctx_c.submit_command(
+                                        SET_WARNING,
+                                        "错误：HiPer无法监听服务端口，请确认端口占用情况".to_string(),
+                                        Target::Auto,
+                                    );
+                                    sent = false;
+                                }
                                 "Failed to get a tun/tap device" => {
                                     let _ = ctx_c.submit_command(
                                         SET_WARNING,
