@@ -453,7 +453,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                                 _ => {
                                     let _ = ctx_c.submit_command(
                                         SET_WARNING,
-                                        "错误：HiPer 启动失败！请检查 latest.log 日志文件确认问题！".to_string(),
+                                        "错误：有异常警告提醒！请查看 latest.log 日志文件确认问题！".to_string(),
                                         Target::Auto,
                                     );
                                     sent = false;
