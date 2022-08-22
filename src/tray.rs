@@ -34,6 +34,8 @@ pub struct TrayIcon {
 
 #[cfg(windows)]
 static mut TRAY: Lazy<TrayIcon> = Lazy::new(TrayIcon::new);
+#[cfg(windows)]
+const ICON_UID: u32 = 6010;
 
 pub fn init_tray() {
     #[cfg(windows)]
@@ -101,7 +103,6 @@ pub fn set_ctx(ctx: ExtEventSink) {
 #[cfg(windows)]
 impl TrayIcon {
     const WM_USER_TRAYICON: u32 = WM_USER + 1;
-    const ICON_GUID: GUID = GUID::from_u128(0xE1214B97484D403EB100B3EC7E4C6ECB);
 
     pub fn new() -> Self {
         unsafe {
@@ -143,11 +144,16 @@ impl TrayIcon {
                 hinstance,
                 std::ptr::null_mut(),
             );
+            
+            if hwnd.0 == 0 {
+                println!("[WARNING] Can't create window for tray icon! {}", dbg!(GetLastError().to_hresult()).message());
+            }
+            
             let nid = NOTIFYICONDATAW {
                 cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as _,
-                guidItem: Self::ICON_GUID,
+                uID: ICON_UID,
                 hWnd: hwnd,
-                uFlags: NIF_ICON | NIF_GUID | NIF_MESSAGE | NIF_INFO | NIF_SHOWTIP,
+                uFlags: NIF_ICON | NIF_MESSAGE,
                 uCallbackMessage: Self::WM_USER_TRAYICON,
                 hIcon: LoadIconW(hinstance, w!("ICON_GRAY")).unwrap(),
                 Anonymous: NOTIFYICONDATAW_0 {
@@ -158,8 +164,17 @@ impl TrayIcon {
 
             let _ = sx.send(hwnd);
 
-            Shell_NotifyIconW(NIM_ADD, &nid).as_bool();
-            Shell_NotifyIconW(NIM_SETVERSION, &nid).as_bool();
+            let r = Shell_NotifyIconW(NIM_ADD, &nid);
+            
+            if !r.as_bool() {
+                println!("[WARNING] Can't create tray!");
+            }
+            
+            let r = Shell_NotifyIconW(NIM_SETVERSION, &nid);
+            
+            if !r.as_bool() {
+                println!("[WARNING] Can't set tray version!");
+            }
 
             let mut msg = MSG::default();
             while GetMessageW(&mut msg, hwnd, 0, 0).0 != 0 {
@@ -270,8 +285,8 @@ impl TrayIcon {
             let tooltip: [u16; 128] = tooltip.try_into().unwrap();
             let nid = NOTIFYICONDATAW {
                 cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as _,
-                guidItem: Self::ICON_GUID,
-                uFlags: NIF_GUID | NIF_TIP,
+                uID: ICON_UID,
+                uFlags: NIF_TIP,
                 szTip: tooltip,
                 Anonymous: NOTIFYICONDATAW_0 {
                     uVersion: NOTIFYICON_VERSION_4,
@@ -299,8 +314,8 @@ impl TrayIcon {
             let message: [u16; 256] = message.try_into().unwrap();
             let nid = NOTIFYICONDATAW {
                 cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as _,
-                guidItem: Self::ICON_GUID,
-                uFlags: NIF_GUID | NIF_INFO | NIF_REALTIME,
+                uID: ICON_UID,
+                uFlags: NIF_INFO | NIF_REALTIME,
                 szInfoTitle: title,
                 szInfo: message,
                 Anonymous: NOTIFYICONDATAW_0 {
@@ -318,8 +333,8 @@ impl TrayIcon {
             let hinstance = GetModuleHandleW(None).unwrap();
             let nid = NOTIFYICONDATAW {
                 cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as _,
-                guidItem: Self::ICON_GUID,
-                uFlags: NIF_ICON | NIF_GUID | NIF_MESSAGE,
+                uID: ICON_UID,
+                uFlags: NIF_GUID | NIF_MESSAGE,
                 uCallbackMessage: Self::WM_USER_TRAYICON,
                 Anonymous: NOTIFYICONDATAW_0 {
                     uVersion: NOTIFYICON_VERSION_4,
@@ -339,8 +354,7 @@ impl TrayIcon {
         unsafe {
             let nid = NOTIFYICONDATAW {
                 cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as _,
-                uFlags: NIF_GUID,
-                guidItem: Self::ICON_GUID,
+                uID: ICON_UID,
                 ..Default::default()
             };
             Shell_NotifyIconW(NIM_DELETE, &nid).as_bool();
