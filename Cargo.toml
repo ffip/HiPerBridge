@@ -8,7 +8,7 @@ edition = "2021"
 [package.metadata.winres]
 OriginalFilename = "HiPerBridge.exe"
 ProductName = "HiPer Bridge"
-FileDescription = "HiPer Bridge - A GUI for HiPer Plus Network Framework"
+FileDescription = "HiPer Bridge - A GUI for HiPer Network Framework"
 LegalCopyright = "Copyright © SteveXMH 2020-2022"
 
 [dependencies]

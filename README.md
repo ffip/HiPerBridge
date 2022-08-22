@@ -2,7 +2,7 @@
 <div align="left">
     <h1>HiPer Bridge</h1>
     <span>
-        一个为 HiPer Plus 内网穿透联机模块制作的极简轻量型图形页面
+        一个为 HiPer 内网穿透联机模块制作的极简轻量型图形页面
     </span>
 </div>
 

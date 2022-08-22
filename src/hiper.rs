@@ -171,7 +171,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
     let tap_path = hiper_dir_path.join("tap-windows.exe");
     let wintun_path = hiper_dir_path.join("wintun.dll");
     let wintun_disabled_path = hiper_dir_path.join("wintun.dll.disabled");
-    let hiper_plus_path = hiper_dir_path.join("hiper.exe");
+    let hiper_path = hiper_dir_path.join("hiper.exe");
 
     std::fs::create_dir_all(&hiper_dir_path).context("无法创建 HiPer 安装目录")?;
     std::fs::create_dir_all(&certs_dir_path).context("无法创建 HiPer 凭证证书目录")?;
@@ -258,12 +258,12 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         #[cfg(not(windows))]
         let download_url = format!("https://gitcode.net/to/hiper/-/raw/master/{}/hiper", arch);
 
-        if hiper_plus_path.exists() {
+        if hiper_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在检查 HiPer 更新", Target::Auto);
 
             // 计算现有的 SHA1
             let mut s = sha1_smol::Sha1::default();
-            s.update(&std::fs::read(&hiper_plus_path).context("无法读取 HiPer 程序以计算摘要")?);
+            s.update(&std::fs::read(&hiper_path).context("无法读取 HiPer 程序以计算摘要")?);
             let current_hash = s.hexdigest();
 
             let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/master/packages.sha1")
@@ -290,7 +290,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                                 .context("无法下载 HiPer 程序")?;
                             println!("HPR downloaded, size {}", res.as_bytes().len());
 
-                            write_file_safe(&hiper_plus_path, res.as_bytes())
+                            write_file_safe(&hiper_path, res.as_bytes())
                                 .context("无法更新 HiPer 程序")?;
                         }
                         break;
@@ -305,13 +305,13 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                 .context("无法下载 HiPer 程序")?;
             println!("HPR downloaded, size {}", res.as_bytes().len());
 
-            write_file_safe(&hiper_plus_path, res.as_bytes()).context("无法安装 HiPer 程序")?;
+            write_file_safe(&hiper_path, res.as_bytes()).context("无法安装 HiPer 程序")?;
         }
     }
 
     let _ = ctx.submit_command(SET_START_TEXT, "正在启动 HiPer", Target::Auto);
 
-    let mut child = Command::new(hiper_plus_path);
+    let mut child = Command::new(hiper_path);
 
     if has_token {
         child.arg("-config");
