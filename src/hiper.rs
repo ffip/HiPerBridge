@@ -216,10 +216,10 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         #[cfg(windows)]
         if !wintun_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载安装 WinTUN", Target::Auto);
-            let res = tinyget::get(&dbg!(format!(
+            let res = tinyget::get(&format!(
                 "https://gitcode.net/to/hiper/-/raw/master/{}/wintun.dll",
                 get_system_arch()
-            )))
+            ))
             .send()
             .context("无法下载 WinTUN")?;
             write_file_safe(&wintun_path, res.as_bytes()).context("无法安装 WinTUN")?;
@@ -538,11 +538,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
 fn stop_process(pid: u32) {
     #[cfg(windows)]
     unsafe {
-        if let Ok(handle) = dbg!(OpenProcess(
-            PROCESS_SYNCHRONIZE | PROCESS_TERMINATE,
-            false,
-            pid
-        )) {
+        if let Ok(handle) = OpenProcess(PROCESS_SYNCHRONIZE | PROCESS_TERMINATE, false, pid) {
             TerminateProcess(handle, 0);
             let _r = WaitForSingleObject(handle, 0);
         }

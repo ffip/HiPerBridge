@@ -133,7 +133,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                     std::thread::spawn(move || {
                                         let _ =
                                             ctx.submit_command(SET_DISABLED, true, Target::Auto);
-                                        dbg!(stop_hiper(ctx.to_owned()));
+                                        (stop_hiper(ctx.to_owned()));
                                         let _ =
                                             ctx.submit_command(SET_DISABLED, false, Target::Auto);
                                     });

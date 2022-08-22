@@ -101,7 +101,6 @@ pub fn set_ctx(ctx: ExtEventSink) {
 #[cfg(windows)]
 impl TrayIcon {
     const WM_USER_TRAYICON: u32 = WM_USER + 1;
-    const WM_USER_PROCESS_COMMANDS: u32 = WM_USER + 2;
     const ICON_GUID: GUID = GUID::from_u128(0xE1214B97484D403EB100B3EC7E4C6ECB);
 
     pub fn new() -> Self {
@@ -159,11 +158,11 @@ impl TrayIcon {
 
             let _ = sx.send(hwnd);
 
-            dbg!(Shell_NotifyIconW(NIM_ADD, &nid).as_bool());
-            dbg!(Shell_NotifyIconW(NIM_SETVERSION, &nid).as_bool());
+            Shell_NotifyIconW(NIM_ADD, &nid).as_bool();
+            Shell_NotifyIconW(NIM_SETVERSION, &nid).as_bool();
 
             let mut msg = MSG::default();
-            while dbg!(GetMessageW(&mut msg, hwnd, 0, 0).0) != 0 {
+            while GetMessageW(&mut msg, hwnd, 0, 0).0 != 0 {
                 TranslateMessage(&msg);
                 DispatchMessageW(&msg);
             }
@@ -211,7 +210,7 @@ impl TrayIcon {
 
                         PostMessageW(hwnd, WM_NULL, None, None);
 
-                        match dbg!(cmd) {
+                        match cmd {
                             1 => {
                                 TRAY.ctx.as_ref().map(|x| {
                                     x.submit_command(SHOW_HIPER_WINDOW, (), Target::Global)
@@ -232,9 +231,7 @@ impl TrayIcon {
                             _ => {}
                         }
                     }
-                    msg => {
-                        dbg!(msg);
-                    }
+                    _ => {}
                 }
                 LRESULT(0)
             }
@@ -281,7 +278,7 @@ impl TrayIcon {
                 },
                 ..std::mem::zeroed()
             };
-            dbg!(Shell_NotifyIconW(NIM_MODIFY, &nid).as_bool());
+            Shell_NotifyIconW(NIM_MODIFY, &nid).as_bool();
         }
     }
 
@@ -311,7 +308,7 @@ impl TrayIcon {
                 },
                 ..std::mem::zeroed()
             };
-            dbg!(Shell_NotifyIconW(NIM_MODIFY, &nid).as_bool());
+            Shell_NotifyIconW(NIM_MODIFY, &nid).as_bool();
         }
     }
 
@@ -334,7 +331,7 @@ impl TrayIcon {
                 },
                 ..std::mem::zeroed()
             };
-            dbg!(Shell_NotifyIconW(NIM_MODIFY, &nid).as_bool());
+            Shell_NotifyIconW(NIM_MODIFY, &nid).as_bool();
         }
     }
 
@@ -346,7 +343,7 @@ impl TrayIcon {
                 guidItem: Self::ICON_GUID,
                 ..Default::default()
             };
-            dbg!(Shell_NotifyIconW(NIM_DELETE, &nid).as_bool());
+            Shell_NotifyIconW(NIM_DELETE, &nid).as_bool();
             DestroyWindow(self.hwnd);
         }
     }
