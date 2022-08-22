@@ -18,10 +18,10 @@ mod config;
 mod hiper;
 mod log_parser;
 mod open_url;
+mod plugin;
 mod tray;
 mod ui;
 mod utils;
-mod plugin;
 
 pub type DynResult<T = ()> = std::result::Result<T, anyhow::Error>;
 
@@ -90,6 +90,8 @@ fn main() {
     }
 
     let size = (295., 232. + 32.);
+
+    plugin::dispatch_event_and_wait("hb-launch");
 
     let saved_app_state = Arc::new(Mutex::new(state));
     loop {
@@ -279,4 +281,6 @@ fn main() {
     hiper::stop_hiper_directly();
 
     tray::uninit_tray();
+
+    plugin::dispatch_event_and_wait("hb-exit");
 }

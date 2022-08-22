@@ -6,7 +6,6 @@ use druid::{commands::CLOSE_ALL_WINDOWS, ExtEventSink, Target};
 use once_cell::sync::Lazy;
 #[cfg(windows)]
 use windows::{
-    core::*,
     w,
     Win32::{
         Foundation::*,
@@ -144,11 +143,14 @@ impl TrayIcon {
                 hinstance,
                 std::ptr::null_mut(),
             );
-            
+
             if hwnd.0 == 0 {
-                println!("[WARNING] Can't create window for tray icon! {}", dbg!(GetLastError().to_hresult()).message());
+                println!(
+                    "[WARNING] Can't create window for tray icon! {}",
+                    dbg!(GetLastError().to_hresult()).message()
+                );
             }
-            
+
             let nid = NOTIFYICONDATAW {
                 cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as _,
                 uID: ICON_UID,
@@ -165,13 +167,13 @@ impl TrayIcon {
             let _ = sx.send(hwnd);
 
             let r = Shell_NotifyIconW(NIM_ADD, &nid);
-            
+
             if !r.as_bool() {
                 println!("[WARNING] Can't create tray!");
             }
-            
+
             let r = Shell_NotifyIconW(NIM_SETVERSION, &nid);
-            
+
             if !r.as_bool() {
                 println!("[WARNING] Can't set tray version!");
             }

@@ -1,5 +1,4 @@
 use std::{
-    fmt::Display,
     fs::OpenOptions,
     io::{BufRead, BufReader, Write},
     path::PathBuf,
@@ -11,14 +10,13 @@ use std::{
     },
 };
 
-use crate::{ui::*, utils::write_file_safe, DynResult};
+use crate::{plugin, ui::*, utils::write_file_safe, DynResult};
 use anyhow::Context;
 use druid::{ExtEventSink, Target};
 use path_absolutize::Absolutize;
 #[cfg(windows)]
 use windows::Win32::System::{
     ProcessStatus::{K32EnumDeviceDrivers, K32GetDeviceDriverBaseNameW},
-    SystemInformation::{GetNativeSystemInfo, SYSTEM_INFO},
     Threading::{
         OpenProcess, TerminateProcess, WaitForSingleObject, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE,
     },
@@ -69,59 +67,6 @@ pub fn get_log_file_path() -> DynResult<PathBuf> {
         .map(|x| x.to_path_buf())?)
 }
 
-enum Arch {
-    X86,
-    X64,
-    ARM64,
-}
-
-impl Display for Arch {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        #[cfg(windows)]
-        match self {
-            Arch::X86 => f.write_str("windows-386"),
-            Arch::X64 => f.write_str("windows-amd64"),
-            Arch::ARM64 => f.write_str("windows-arm64"),
-        }
-        #[cfg(unix)]
-        match self {
-            Arch::X86 => f.write_str("linux-386"),
-            Arch::X64 => f.write_str("linux-amd64"),
-            Arch::ARM64 => f.write_str("linux-arm64"),
-        }
-        #[cfg(osx)]
-        match self {
-            Arch::X86 => f.write_str("darwin-386"),
-            Arch::X64 => f.write_str("darwin-amd64"),
-            Arch::ARM64 => f.write_str("darwin-arm64"),
-        }
-    }
-}
-
-fn get_system_arch() -> Arch {
-    #[cfg(windows)]
-    unsafe {
-        let mut info: SYSTEM_INFO = Default::default();
-        GetNativeSystemInfo(&mut info);
-        match info.Anonymous.Anonymous.wProcessorArchitecture.0 {
-            0 => Arch::X86,
-            12 => Arch::ARM64,
-            9 => Arch::X64,
-            _ => unreachable!(),
-        }
-    }
-    #[cfg(all(target_os = "linux", target_arch = "x86"))]
-    return Arch::X86;
-    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    return Arch::X64;
-    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
-    return Arch::ARM64;
-    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-    return Arch::X64;
-    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-    return Arch::ARM64;
-}
-
 pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bool) {
     std::thread::spawn(move || {
         let _ = ctx.submit_command(SET_DISABLED, true, Target::Auto);
@@ -158,7 +103,7 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
     }
 }
 
-pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bool) -> DynResult {
+pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: bool) -> DynResult {
     println!("Launching hiper using token {}", token);
 
     let has_token = !token.is_empty();
@@ -218,7 +163,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载安装 WinTUN", Target::Auto);
             let res = tinyget::get(&format!(
                 "https://gitcode.net/to/hiper/-/raw/master/{}/wintun.dll",
-                get_system_arch()
+                crate::utils::get_system_arch()
             ))
             .send()
             .context("无法下载 WinTUN")?;
@@ -249,7 +194,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
     let _update_available = false;
 
     if !HAS_UPDATED.load(std::sync::atomic::Ordering::SeqCst) {
-        let arch = get_system_arch().to_string();
+        let arch = crate::utils::get_system_arch().to_string();
         #[cfg(windows)]
         let download_url = format!(
             "https://gitcode.net/to/hiper/-/raw/master/{}/hiper.exe",
@@ -340,6 +285,8 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
             .spawn()
             .context("无法启动 HiPer")?;
 
+        plugin::dispatch_event("launch");
+
         #[cfg(all(windows, not(debug_assertions)))]
         if debug_mode {
             unsafe {
@@ -425,6 +372,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                                     "HiPer Bridge 正在运行！",
                                     &format!("现在可以使用地址 {} 来访问 HiPer 网络了", ipv4),
                                 );
+                                plugin::dispatch_event("joined");
                                 sent = true;
                             }
                         }
@@ -495,12 +443,15 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
             }
         }
         println!("[WARN] HiPer 已退出！");
+        plugin::dispatch_event("stopped");
+
         if sent && !child.wait().map(|x| x.success()).unwrap_or(false) {
             let _ = ctx_c.submit_command(
                 SET_WARNING,
                 "警告：HiPer Bridge 意外退出！5 秒后将会自动重启！\n　　如需阻止自动重启，请点击关闭按钮！".to_string(),
                 Target::Auto,
             );
+            plugin::dispatch_event("crashed");
             std::thread::sleep(std::time::Duration::from_secs(5));
             let _ = ctx_c.submit_command(REQUEST_RESTART, (), Target::Auto);
         }
