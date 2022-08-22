@@ -1,7 +1,4 @@
-use druid::{
-    widget::{Flex, TextBox},
-    *,
-};
+use druid::{widget::Flex, *};
 
 use scl_gui_widgets::{
     theme::icons::{IconColorKey, IconKeyPair, IconPathKey},
@@ -12,7 +9,7 @@ use scl_gui_widgets::{
 use std::{fmt::Write, time::Duration};
 
 use crate::{
-    app_state::{AppState, TimerTokenData},
+    app_state::AppState,
     hiper::{get_hiper_dir, run_hiper_in_thread, stop_hiper},
     open_url::open_url,
 };
@@ -30,6 +27,7 @@ pub const SET_IP: Selector<String> = Selector::new("set-ip");
 pub const SET_WARNING: Selector<String> = Selector::new("set-warning");
 pub const SET_DISABLED: Selector<bool> = Selector::new("set-disabled");
 pub const REQUEST_RESTART: Selector = Selector::new("request-restart");
+pub const SHOW_HIPER_WINDOW: Selector = Selector::new("show-hiper-window");
 
 fn main_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
@@ -56,7 +54,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                             let hour = min / 60;
                             let day = hour / 24;
                             let min = min % 60;
-                            let hour = hour % 60;
+                            let hour = hour % 24;
 
                             let mut run_time_formated = String::with_capacity(16);
 
@@ -108,12 +106,13 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                 .show_if(|data: &AppState, _| !data.ip.is_empty()),
         )
         .with_child(
-            TextBox::new()
-                .with_placeholder("凭证密钥")
+            label::new("凭证密钥")
+                .show_if(|data: &AppState, _| data.ip.is_empty())
+                .padding((0., 5.)),
+        )
+        .with_child(
+            PasswordBox::new()
                 .lens(AppState::token)
-                .on_change(|_, old_data, data, _| {
-                    data.token_modified |= old_data.token != data.token;
-                })
                 .show_if(|data, _| data.ip.is_empty()),
         )
         .with_spacer(10.)
@@ -124,14 +123,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                         .with_accent(true)
                         .on_click(|ctx, data, _| {
                             let ctx = ctx.get_external_handle();
-                            if data.token_modified {
-                                data.inner_token = data.token.to_owned();
-                                if !data.inner_token.is_empty() {
-                                    data.token = "••••••••".into();
-                                }
-                                data.token_modified = false;
-                            }
-                            let token = data.inner_token.to_owned();
+                            let token = data.token.to_owned();
                             let use_tun = data.use_tun;
                             match data.start_button {
                                 "启动" => {
@@ -141,7 +133,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                     std::thread::spawn(move || {
                                         let _ =
                                             ctx.submit_command(SET_DISABLED, true, Target::Auto);
-                                        stop_hiper(ctx.to_owned());
+                                        dbg!(stop_hiper(ctx.to_owned()));
                                         let _ =
                                             ctx.submit_command(SET_DISABLED, false, Target::Auto);
                                     });
@@ -213,7 +205,7 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_spacer(10.)
         .with_child(label::new("关于"))
         .with_spacer(10.)
-        .with_child(label::new("HiPer Bridge v0.0.6"))
+        .with_child(label::new("HiPer Bridge v0.0.7"))
         .with_child(label::new("轻量级 HiPer 启动器"))
         .with_child(label::new("By SteveXMH"))
         .with_spacer(10.)
@@ -241,12 +233,14 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
 
 pub struct AppWrapper {
     inner: WidgetPod<AppState, Box<dyn Widget<AppState>>>,
+    run_timer: TimerToken,
 }
 
 impl AppWrapper {
     pub fn new(inner: impl Widget<AppState> + 'static) -> Self {
         Self {
             inner: WidgetPod::new(inner).boxed(),
+            run_timer: TimerToken::INVALID,
         }
     }
 }
@@ -254,18 +248,18 @@ impl AppWrapper {
 impl Widget<AppState> for AppWrapper {
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut AppState, env: &Env) {
         if let Event::Timer(tt) = event {
-            if &data.run_timer.0 == tt {
+            if &self.run_timer == tt {
                 data.run_time += 1;
-                data.run_timer = TimerTokenData(ctx.request_timer(Duration::from_secs(1)));
+                self.run_timer = ctx.request_timer(Duration::from_secs(1));
                 ctx.request_update();
             }
         } else if let Event::Command(cmd) = event {
             if let Some(ip) = cmd.get(SET_IP) {
                 if ip.is_empty() {
-                    data.run_timer = TimerTokenData::default();
+                    self.run_timer = TimerToken::INVALID;
                 } else {
                     data.run_time = 0;
-                    data.run_timer = TimerTokenData(ctx.request_timer(Duration::from_secs(1)));
+                    self.run_timer = ctx.request_timer(Duration::from_secs(1));
                 }
             }
         }
@@ -273,6 +267,9 @@ impl Widget<AppState> for AppWrapper {
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &AppState, env: &Env) {
+        if let LifeCycle::WidgetAdded = event {
+            self.run_timer = ctx.request_timer(Duration::from_secs(1));
+        }
         self.inner.lifecycle(ctx, event, data, env)
     }
 

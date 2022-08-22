@@ -19,7 +19,7 @@ pub fn save_config(app_state: &AppState) {
 
             data_hashmap.insert(
                 "token".into(),
-                JsonValue::String(app_state.inner_token.to_owned()),
+                JsonValue::String(app_state.token.to_owned()),
             );
             data_hashmap.insert("use_tun".into(), JsonValue::Boolean(app_state.use_tun));
             data_hashmap.insert(
@@ -52,8 +52,7 @@ pub fn load_config(app_state: &mut AppState) {
                 if let Ok(JsonValue::Object(data)) = file.parse::<JsonValue>() {
                     if let Some(Some(token)) = data.get("token").map(|x| x.get::<String>()) {
                         if !token.is_empty() {
-                            app_state.inner_token = token.to_owned();
-                            app_state.token = "••••••••".into();
+                            app_state.token = token.to_owned();
                         }
                     }
                     if let Some(use_tun) = data

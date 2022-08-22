@@ -19,7 +19,9 @@ use path_absolutize::Absolutize;
 use windows::Win32::System::{
     ProcessStatus::{K32EnumDeviceDrivers, K32GetDeviceDriverBaseNameW},
     SystemInformation::{GetNativeSystemInfo, SYSTEM_INFO},
-    Threading::{OpenProcess, TerminateProcess, WaitForSingleObject, PROCESS_ACCESS_RIGHTS},
+    Threading::{
+        OpenProcess, TerminateProcess, WaitForSingleObject, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE,
+    },
 };
 
 static HIPER_PROCESS: AtomicU32 = AtomicU32::new(0);
@@ -156,7 +158,7 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
     }
 }
 
-pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bool) -> DynResult {
+pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: bool) -> DynResult {
     println!("Launching hiper using token {}", token);
 
     let has_token = !token.is_empty();
@@ -418,10 +420,15 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                                 sender.send(ipv4.to_string()).map_err(|x| {
                                     anyhow::anyhow!("无法发送 IP 地址到父线程：{}", x.as_inner())
                                 })?;
+                                crate::tray::set_icon(true);
+                                crate::tray::notify(
+                                    "HiPer Bridge 正在运行！",
+                                    &format!("现在可以使用地址 {} 来访问 HiPer 网络了", ipv4),
+                                );
                                 sent = true;
                             }
                         }
-                    } else if let Some((level, msg, error)) =
+                    } else if let Some((level, _msg, error)) =
                         crate::log_parser::try_get_log_line(line)
                     {
                         if &level == "error" {
@@ -437,7 +444,8 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                                 "Failed to open udp listener" => {
                                     let _ = ctx_c.submit_command(
                                         SET_WARNING,
-                                        "错误：HiPer无法监听服务端口，请确认端口占用情况".to_string(),
+                                        "错误：HiPer无法监听服务端口，请确认端口占用情况"
+                                            .to_string(),
                                         Target::Auto,
                                     );
                                     sent = false;
@@ -451,16 +459,16 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
                                     sent = false;
                                 }
                                 _ => {
-                                    let _ = ctx_c.submit_command(
-                                        SET_WARNING,
-                                        "错误：HiPer 启动失败！请检查 latest.log 日志文件确认问题！".to_string(),
-                                        Target::Auto,
-                                    );
-                                    sent = false;
+                                    // let _ = ctx_c.submit_command(
+                                    //     SET_WARNING,
+                                    //     "错误：HiPer 启动失败！请检查 latest.log 日志文件确认问题！".to_string(),
+                                    //     Target::Auto,
+                                    // );
+                                    // sent = false;
                                 }
                             }
                             std::thread::sleep(std::time::Duration::from_secs(5));
-                            let _ = ctx.submit_command(SET_WARNING, "".to_string(), Target::Auto);
+                            let _ = ctx_c.submit_command(SET_WARNING, "".to_string(), Target::Auto);
                         }
                     }
                     if no_more_logs {
@@ -487,7 +495,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
             }
         }
         println!("[WARN] HiPer 已退出！");
-        if sent {
+        if sent && !child.wait().map(|x| x.success()).unwrap_or(false) {
             let _ = ctx_c.submit_command(
                 SET_WARNING,
                 "警告：HiPer Bridge 意外退出！5 秒后将会自动重启！\n　　如需阻止自动重启，请点击关闭按钮！".to_string(),
@@ -496,6 +504,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
             std::thread::sleep(std::time::Duration::from_secs(5));
             let _ = ctx_c.submit_command(REQUEST_RESTART, (), Target::Auto);
         }
+        crate::tray::set_icon(false);
         Ok(())
     });
 
@@ -529,11 +538,19 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
 fn stop_process(pid: u32) {
     #[cfg(windows)]
     unsafe {
-        if let Ok(handle) = OpenProcess(PROCESS_ACCESS_RIGHTS(0x0001), false, pid) {
+        if let Ok(handle) = dbg!(OpenProcess(
+            PROCESS_SYNCHRONIZE | PROCESS_TERMINATE,
+            false,
+            pid
+        )) {
             TerminateProcess(handle, 0);
-            WaitForSingleObject(handle, 0);
+            let _r = WaitForSingleObject(handle, 0);
         }
     }
+}
+
+pub fn is_running() -> bool {
+    HIPER_PROCESS.load(std::sync::atomic::Ordering::SeqCst) != 0
 }
 
 pub fn stop_hiper_directly() {
