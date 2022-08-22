@@ -21,6 +21,7 @@ mod open_url;
 mod tray;
 mod ui;
 mod utils;
+mod plugin;
 
 pub type DynResult<T = ()> = std::result::Result<T, anyhow::Error>;
 
