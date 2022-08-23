@@ -103,7 +103,7 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
     }
 }
 
-pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: bool) -> DynResult {
+pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bool) -> DynResult {
     println!("Launching hiper using token {}", token);
 
     let has_token = !token.is_empty();

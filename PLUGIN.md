@@ -34,6 +34,7 @@
         "on": "launch",                                 // 触发事件的条件，必需，可选值见下文描述
         "system": "windows",                            // 触发该脚本的系统平台，可选，默认不限，可选值见下文描述
         "arch": "x86_64",                               // 触发该脚本所需的架构，可选，默认不限，可选值见下文描述
+        "debug": true,                                  // 仅 Windows：是否显示命令行窗口（查看输出）
         "commands": [                                   // 指令数组，内部的指令都将按顺序被直接写入到 STDIN 写入流中
             "echo Started!"
         ]
@@ -59,7 +60,7 @@
 {
     "version": "",                              // 当前插件的最新版本号，将会和本地的 plugin_version 比对，如果不等则会触发更新
     "downloads": [{                             // 插件包的文件清单，HiPer Bridge 将会按顺序选择第一个匹配的文件下载更新
-        "system": "windows",                        // 文件对应操作系统，可选，默认全系统
+        "system": "windows",                    // 文件对应操作系统，可选，默认全系统
         "arch": "x86_64",                       // 文件对应系统架构，可选，默认全架构
         "url": "https://example.com/update.zip",// 文件对应的下载链接，必须是直链
     }]

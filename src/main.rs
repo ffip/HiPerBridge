@@ -95,7 +95,7 @@ fn main() {
 
     let saved_app_state = Arc::new(Mutex::new(state));
     loop {
-        let saved_app_state_c = saved_app_state.to_owned();
+        let saved_app_state_c = saved_app_state.clone();
         let cloned_app_state = saved_app_state.lock().unwrap().to_owned();
 
         let app = AppLauncher::with_window(

@@ -97,6 +97,7 @@ pub struct PluginScript {
     on: String,
     system: String,
     arch: String,
+    debug: bool,
     commands: Vec<String>,
 }
 
@@ -231,6 +232,10 @@ impl PluginScript {
             .try_get_into::<String>("arch")
             .cloned()
             .unwrap_or_default();
+        let debug = value
+            .try_get_into::<bool>("debug")
+            .cloned()
+            .unwrap_or(false);
         if let JsonValue::Object(obj) = value {
             if let Some(JsonValue::Array(arr)) = obj.get("commands") {
                 let commands = arr
@@ -242,6 +247,7 @@ impl PluginScript {
                     system,
                     arch,
                     commands,
+                    debug,
                 });
             }
         }
@@ -249,6 +255,7 @@ impl PluginScript {
             on,
             system,
             arch,
+            debug,
             commands: vec![],
         })
     }
@@ -296,7 +303,13 @@ impl PluginScript {
             }
         }
         #[cfg(target_os = "windows")]
-        p.arg("/c").arg(self.commands.join("\n"));
+        {
+            use std::os::windows::process::CommandExt;
+            p.arg("/c").arg(self.commands.join("\n"));
+            if !self.debug {
+                p.creation_flags(0x08000000);
+            }
+        }
         #[cfg(target_os = "windows")]
         let p = p.spawn()?;
         #[cfg(not(target_os = "windows"))]

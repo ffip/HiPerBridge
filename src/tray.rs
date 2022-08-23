@@ -336,8 +336,7 @@ impl TrayIcon {
             let nid = NOTIFYICONDATAW {
                 cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as _,
                 uID: ICON_UID,
-                uFlags: NIF_GUID | NIF_MESSAGE,
-                uCallbackMessage: Self::WM_USER_TRAYICON,
+                uFlags: NIF_ICON,
                 Anonymous: NOTIFYICONDATAW_0 {
                     uVersion: NOTIFYICON_VERSION_4,
                 },
