@@ -1,9 +1,8 @@
 //! 托盘图标
 //! 目前仅 Windows 可用
-use std::sync::mpsc::Sender;
 
-use druid::{commands::CLOSE_ALL_WINDOWS, ExtEventSink, Target};
-use once_cell::sync::Lazy;
+use druid::ExtEventSink;
+
 #[cfg(windows)]
 use windows::{
     w,
@@ -13,8 +12,6 @@ use windows::{
         UI::{Shell::*, WindowsAndMessaging::*},
     },
 };
-
-use crate::ui::SHOW_HIPER_WINDOW;
 
 #[derive(Copy, Clone)]
 pub enum TrayMessage {
@@ -54,7 +51,7 @@ pub fn uninit_tray() {
     }
 }
 
-pub fn set_tooltip(tooltip: &str) {
+pub fn set_tooltip(_tooltip: &str) {
     #[cfg(windows)]
     {
         unsafe {
@@ -63,7 +60,7 @@ pub fn set_tooltip(tooltip: &str) {
     }
 }
 
-pub fn set_icon(enable: bool) {
+pub fn set_icon(_enable: bool) {
     #[cfg(windows)]
     {
         unsafe {
@@ -72,7 +69,7 @@ pub fn set_icon(enable: bool) {
     }
 }
 
-pub fn notify(title: &str, message: &str) {
+pub fn notify(_title: &str, _message: &str) {
     #[cfg(windows)]
     {
         unsafe {
@@ -92,7 +89,7 @@ pub fn take_command() -> TrayMessage {
     }
 }
 
-pub fn set_ctx(ctx: ExtEventSink) {
+pub fn set_ctx(_ctx: ExtEventSink) {
     #[cfg(windows)]
     {
         unsafe { TRAY.set_ctx(ctx) }

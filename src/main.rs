@@ -7,7 +7,7 @@ use std::{
 
 use config::{load_config, save_config};
 use druid::{
-    commands::{CLOSE_WINDOW, CONFIGURE_WINDOW},
+    commands::{CLOSE_ALL_WINDOWS, CONFIGURE_WINDOW, QUIT_APP},
     WidgetExt as _, *,
 };
 use hiper::run_hiper_in_thread;
@@ -96,71 +96,81 @@ fn main() {
     let saved_app_state = Arc::new(Mutex::new(state));
     loop {
         let saved_app_state_c = saved_app_state.clone();
-        let cloned_app_state = saved_app_state.lock().unwrap().to_owned();
+        let cloned_app_state = { saved_app_state.lock().unwrap().to_owned() };
 
-        let app = AppLauncher::with_window(
-            WindowDesc::new(
-                WindowWidget::new("HiPer Bridge", ui::ui_builder())
-                    .on_command(SHOW_HIPER_WINDOW, |ctx, _, _data| {
-                        ctx.submit_command(
-                            CONFIGURE_WINDOW.with(
+        let app = AppLauncher::with_window({
+            let desc =
+                WindowDesc::new(
+                    WindowWidget::new("HiPer Bridge", ui::ui_builder())
+                        .on_command(SHOW_HIPER_WINDOW, |ctx, _, _data| {
+                            ctx.submit_command(CONFIGURE_WINDOW.with(
                                 WindowConfig::default().set_window_state(WindowState::Restored),
-                            ),
-                        );
-                    })
-                    .on_command(SET_DISABLED, |_, disabled, data| {
-                        data.disabled = *disabled;
-                    })
-                    .on_command(SET_START_TEXT, |_, text, data| {
-                        data.start_button = *text;
-                    })
-                    .on_command(SET_IP, |_ctx, ip, data| {
-                        data.ip = ip.to_owned();
-                        tray::set_icon(!data.ip.is_empty());
-                    })
-                    .on_command(SET_WARNING, |_, warning, data| {
-                        data.warning = warning.to_owned();
-                    })
-                    .on_command(REQUEST_RESTART, |ctx, _, data| {
-                        if data.auto_restart && !data.ip.is_empty() {
-                            let token = data.token.to_owned();
-                            let use_tun = data.use_tun;
-                            let ctx = ctx.get_external_handle();
-                            run_hiper_in_thread(ctx, token, use_tun, data.debug_mode);
-                        }
-                    })
-                    .on_notify(BACK_PAGE_CLICKED, |ctx, _, _| {
-                        ctx.submit_command(QUERY_POP_PAGE.with("main"));
-                        ctx.submit_command(ENABLE_BACK_PAGE.with(false));
-                    })
-                    .on_notify(QUERY_CLOSE_WINDOW, move |ctx, _, data| {
-                        if !data.disabled {
-                            let state = data.to_owned();
-                            let mut saved_app_state = saved_app_state_c.lock().unwrap();
-                            *saved_app_state = state;
-                            ctx.submit_command(CLOSE_WINDOW.to(Target::Window(ctx.window_id())));
-                        }
-                    })
-                    .disabled_if(|data, _| data.disabled),
-            )
-            .set_position({
-                let monitors = Screen::get_monitors();
-                let screen = monitors
-                    .iter()
-                    .find(|a| a.is_primary())
-                    .unwrap_or_else(|| monitors.first().unwrap());
-                let screen_rect = screen.virtual_work_rect();
-                druid::Point::new(
-                    (screen_rect.width() - size.0) / 2.,
-                    (screen_rect.height() - size.1) / 2.,
+                            ));
+                        })
+                        .on_command(SET_DISABLED, |_, disabled, data| {
+                            data.disabled = *disabled;
+                        })
+                        .on_command(SET_START_TEXT, |_, text, data| {
+                            data.start_button = *text;
+                        })
+                        .on_command(SET_IP, |_ctx, ip, data| {
+                            data.ip = ip.to_owned();
+                            tray::set_icon(!data.ip.is_empty());
+                        })
+                        .on_command(SET_WARNING, |_, warning, data| {
+                            data.warning = warning.to_owned();
+                        })
+                        .on_command(REQUEST_RESTART, |ctx, _, data| {
+                            if data.auto_restart && !data.ip.is_empty() {
+                                let token = data.token.to_owned();
+                                let use_tun = data.use_tun;
+                                let ctx = ctx.get_external_handle();
+                                run_hiper_in_thread(ctx, token, use_tun, data.debug_mode);
+                            }
+                        })
+                        .on_notify(BACK_PAGE_CLICKED, |ctx, _, _| {
+                            ctx.submit_command(QUERY_POP_PAGE.with("main"));
+                            ctx.submit_command(ENABLE_BACK_PAGE.with(false));
+                        })
+                        .on_notify(QUERY_CLOSE_WINDOW, move |ctx, _, data| {
+                            if !data.disabled {
+                                println!("Saving State");
+                                let state = data.to_owned();
+                                let mut saved_app_state = saved_app_state_c.lock().unwrap();
+                                *saved_app_state = state;
+                                ctx.submit_command(CLOSE_ALL_WINDOWS);
+                                #[cfg(target_os = "macos")]
+                                println!("Closing Window");
+                                ctx.submit_command(QUIT_APP);
+                            }
+                        })
+                        .disabled_if(|data, _| data.disabled),
                 )
-            })
-            .resizable(false)
-            .window_size(size)
-            .window_size_policy(WindowSizePolicy::User)
-            .title("HiPer Bridge")
-            .show_titlebar(false),
-        )
+                .set_position({
+                    let monitors = Screen::get_monitors();
+                    let screen = monitors
+                        .iter()
+                        .find(|a| a.is_primary())
+                        .unwrap_or_else(|| monitors.first().unwrap());
+                    let screen_rect = screen.virtual_work_rect();
+                    druid::Point::new(
+                        (screen_rect.width() - size.0) / 2.,
+                        (screen_rect.height() - size.1) / 2.,
+                    )
+                })
+                .resizable(false)
+                .window_size(size)
+                .window_size_policy(WindowSizePolicy::User)
+                .title("HiPer Bridge");
+            #[cfg(target_os = "macos")]
+            {
+                desc
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                desc.show_titlebar(false)
+            }
+        })
         .configure_env(|env, _| {
             scl_gui_widgets::theme::color::set_color_to_env(
                 env,

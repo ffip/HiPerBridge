@@ -91,11 +91,19 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                     let _ = cb.set_contents(data.ip.to_owned());
                                 }
                             }
-                            #[cfg(unix)]
+                            #[cfg(target_os = "linux")]
                             {
                                 if let Ok(mut cb) = clipboard::x11_clipboard::X11ClipboardContext::<
                                     clipboard::x11_clipboard::Clipboard,
                                 >::new()
+                                {
+                                    let _ = cb.set_contents(data.ip.to_owned());
+                                }
+                            }
+                            #[cfg(target_os = "macos")]
+                            {
+                                if let Ok(mut cb) =
+                                    clipboard::osx_clipboard::OSXClipboardContext::new()
                                 {
                                     let _ = cb.set_contents(data.ip.to_owned());
                                 }

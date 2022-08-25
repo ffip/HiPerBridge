@@ -316,6 +316,7 @@ impl PluginScript {
         let mut p = p.spawn()?;
         #[cfg(not(target_os = "windows"))]
         if let Some(stdin) = &mut p.stdin {
+            use std::io::Write;
             for line in &self.commands {
                 let _ = stdin.write(line.as_bytes());
                 let _ = stdin.write(b"\n");

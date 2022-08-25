@@ -103,7 +103,7 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
     }
 }
 
-pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bool) -> DynResult {
+pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: bool) -> DynResult {
     println!("Launching hiper using token {}", token);
 
     let has_token = !token.is_empty();
@@ -113,10 +113,13 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
     let hiper_dir_path = get_hiper_dir()?;
     let certs_dir_path = hiper_dir_path.join("certs");
 
-    let tap_path = hiper_dir_path.join("tap-windows.exe");
+    let _tap_path = hiper_dir_path.join("tap-windows.exe");
     let wintun_path = hiper_dir_path.join("wintun.dll");
     let wintun_disabled_path = hiper_dir_path.join("wintun.dll.disabled");
+    #[cfg(windows)]
     let hiper_path = hiper_dir_path.join("hiper.exe");
+    #[cfg(not(windows))]
+    let hiper_path = hiper_dir_path.join("hiper");
 
     std::fs::create_dir_all(&hiper_dir_path).context("无法创建 HiPer 安装目录")?;
     std::fs::create_dir_all(&certs_dir_path).context("无法创建 HiPer 凭证证书目录")?;
@@ -251,6 +254,15 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bo
             println!("HPR downloaded, size {}", res.as_bytes().len());
 
             write_file_safe(&hiper_path, res.as_bytes()).context("无法安装 HiPer 程序")?;
+
+            #[cfg(unix)]
+            {
+                std::process::Command::new("chmod")
+                    .arg("+x")
+                    .arg(hiper_path.to_string_lossy().to_string())
+                    .status()
+                    .context("无法对 HiPer 程序增加可执行权限！")?;
+            }
         }
     }
 
@@ -493,6 +505,10 @@ fn stop_process(pid: u32) {
             TerminateProcess(handle, 0);
             let _r = WaitForSingleObject(handle, 0);
         }
+    }
+    #[cfg(unix)]
+    unsafe {
+        nix::libc::kill(pid as i32, nix::libc::SIGTERM);
     }
 }
 

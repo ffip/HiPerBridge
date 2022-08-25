@@ -29,13 +29,13 @@ impl Display for Arch {
             Arch::X64 => f.write_str("windows-amd64"),
             Arch::ARM64 => f.write_str("windows-arm64"),
         }
-        #[cfg(unix)]
+        #[cfg(target_os = "linux")]
         match self {
             Arch::X86 => f.write_str("linux-386"),
             Arch::X64 => f.write_str("linux-amd64"),
             Arch::ARM64 => f.write_str("linux-arm64"),
         }
-        #[cfg(osx)]
+        #[cfg(target_os = "macos")]
         match self {
             Arch::X86 => f.write_str("darwin-386"),
             Arch::X64 => f.write_str("darwin-amd64"),
