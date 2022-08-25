@@ -114,7 +114,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                 .show_if(|data: &AppState, _| !data.ip.is_empty()),
         )
         .with_child(
-            label::new("凭证密钥")
+            label::new("配置索引")
                 .show_if(|data: &AppState, _| data.ip.is_empty())
                 .padding((0., 5.)),
         )
@@ -216,6 +216,10 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_child(label::new("HiPer Bridge v0.0.7"))
         .with_child(label::new("轻量级 HiPer 启动器"))
         .with_child(label::new("By SteveXMH"))
+        .with_spacer(10.)
+        .with_child(Button::new("插件文档").on_click(|_, _, _| {
+            open_url("https://github.com/Steve-xmh/HiPerBridge/blob/main/PLUGIN.md");
+        }))
         .with_spacer(10.)
         .with_child(Button::new("爱发电").on_click(|_, _, _| {
             open_url("https://afdian.net/@SteveXMH");
