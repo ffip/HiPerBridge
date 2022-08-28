@@ -54,8 +54,18 @@ fn main() {
             return;
         }
     }
-    #[cfg(unix)]
+    #[cfg(target_os = "linux")]
     {
+        if !nix::unistd::getuid().is_root() {
+            println!("HiPer Bridge requires root user to run!");
+            println!("Use sudo/su to rerun to start as a root user!");
+            return;
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = nix::unistd::setuid(nix::unistd::Uid::from_raw(0));
+        let _ = nix::unistd::setgid(nix::unistd::Gid::from_raw(0));
         if !nix::unistd::getuid().is_root() {
             println!("HiPer Bridge requires root user to run!");
             println!("Use sudo/su to rerun to start as a root user!");
