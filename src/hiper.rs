@@ -3,7 +3,6 @@ use std::{
     io::{BufRead, BufReader, Write},
     path::PathBuf,
     process::{Command, Stdio},
-    str::FromStr,
     sync::{
         atomic::{AtomicBool, AtomicU32},
         Mutex,
@@ -97,9 +96,17 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
         let hiper_dir_path = appdata.join("hiper");
         Ok(hiper_dir_path)
     }
-    #[cfg(unix)]
+    #[cfg(target_os = "linux")]
     {
-        Ok(PathBuf::from_str("/etc/hiper").context("无法将路径字符串转换成路径")?)
+        PathBuf::from_str("/etc/hiper").context("无法将路径字符串转换成路径")
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(user_path) = dirs::data_local_dir() {
+            Ok(user_path.join("HiPer Bridge"))
+        } else {
+            anyhow::bail!("无法获取用户数据文件夹路径")
+        }
     }
 }
 
@@ -300,7 +307,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         plugin::dispatch_event("launch");
 
         #[cfg(all(windows, not(debug_assertions)))]
-        if debug_mode {
+        if _debug_mode {
             unsafe {
                 windows::Win32::System::Console::AllocConsole();
                 // 设置控制台关闭指令
@@ -449,7 +456,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
             }
         }
         #[cfg(all(windows, not(debug_assertions)))]
-        if debug_mode {
+        if _debug_mode {
             unsafe {
                 windows::Win32::System::Console::FreeConsole();
             }

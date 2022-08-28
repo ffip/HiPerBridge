@@ -62,16 +62,6 @@ fn main() {
             return;
         }
     }
-    #[cfg(target_os = "macos")]
-    {
-        let _ = nix::unistd::setuid(nix::unistd::Uid::from_raw(0));
-        let _ = nix::unistd::setgid(nix::unistd::Gid::from_raw(0));
-        if !nix::unistd::getuid().is_root() {
-            println!("HiPer Bridge requires root user to run!");
-            println!("Use sudo/su to rerun to start as a root user!");
-            return;
-        }
-    }
 
     let mut state = AppState::default();
     tray::init_tray();
@@ -90,7 +80,7 @@ fn main() {
                 .creation_flags(0x08000000)
                 .status();
         }
-        #[cfg(unix)]
+        #[cfg(target_os = "linux")]
         {
             let _ = std::process::Command::new("kill")
                 .arg("-9")
