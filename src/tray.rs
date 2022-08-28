@@ -25,11 +25,11 @@ pub struct TrayIcon {
     enable: bool,
     should_exit: bool,
     ctx: Option<ExtEventSink>,
-    sx: Option<Sender<TrayMessage>>,
+    sx: Option<std::sync::mpsc::Sender<TrayMessage>>,
 }
 
 #[cfg(windows)]
-static mut TRAY: Lazy<TrayIcon> = Lazy::new(TrayIcon::new);
+static mut TRAY: once_cell::sync::Lazy<TrayIcon> = once_cell::sync::Lazy::new(TrayIcon::new);
 #[cfg(windows)]
 const ICON_UID: u32 = 6010;
 
@@ -55,7 +55,7 @@ pub fn set_tooltip(_tooltip: &str) {
     #[cfg(windows)]
     {
         unsafe {
-            TRAY.set_tooltip(tooltip);
+            TRAY.set_tooltip(_tooltip);
         }
     }
 }
@@ -64,7 +64,7 @@ pub fn set_icon(_enable: bool) {
     #[cfg(windows)]
     {
         unsafe {
-            TRAY.set_icon(enable);
+            TRAY.set_icon(_enable);
         }
     }
 }
@@ -73,7 +73,7 @@ pub fn notify(_title: &str, _message: &str) {
     #[cfg(windows)]
     {
         unsafe {
-            TRAY.notify(title, message);
+            TRAY.notify(_title, _message);
         }
     }
 }
@@ -92,7 +92,7 @@ pub fn take_command() -> TrayMessage {
 pub fn set_ctx(_ctx: ExtEventSink) {
     #[cfg(windows)]
     {
-        unsafe { TRAY.set_ctx(ctx) }
+        unsafe { TRAY.set_ctx(_ctx) }
     }
 }
 
@@ -198,7 +198,7 @@ impl TrayIcon {
                         // 显示窗口
                         TRAY.ctx
                             .as_ref()
-                            .map(|x| x.submit_command(SHOW_HIPER_WINDOW, (), Target::Global));
+                            .map(|x| x.submit_command(crate::ui::SHOW_HIPER_WINDOW, (), druid::Target::Global));
                         if let Some(sx) = &TRAY.sx {
                             let _ = sx.send(TrayMessage::ShowWindow);
                         }
@@ -227,7 +227,7 @@ impl TrayIcon {
                         match cmd {
                             1 => {
                                 TRAY.ctx.as_ref().map(|x| {
-                                    x.submit_command(SHOW_HIPER_WINDOW, (), Target::Global)
+                                    x.submit_command(crate::ui::SHOW_HIPER_WINDOW, (), druid::Target::Global)
                                 });
                                 if let Some(sx) = &TRAY.sx {
                                     let _ = sx.send(TrayMessage::ShowWindow);
@@ -236,7 +236,7 @@ impl TrayIcon {
                             2 => {
                                 TRAY.should_exit = true;
                                 TRAY.ctx.as_ref().map(|x| {
-                                    x.submit_command(CLOSE_ALL_WINDOWS, (), Target::Global)
+                                    x.submit_command(druid::commands::CLOSE_ALL_WINDOWS, (), druid::Target::Global)
                                 });
                                 if let Some(sx) = &TRAY.sx {
                                     let _ = sx.send(TrayMessage::Exit);

@@ -90,6 +90,7 @@ pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool, debu
 pub fn get_hiper_dir() -> DynResult<PathBuf> {
     #[cfg(windows)]
     {
+        use std::str::FromStr;
         let appdata =
             PathBuf::from_str(&std::env::var("APPDATA").context("无法获取 APPDATA 环境变量")?)
                 .context("无法将 APPDATA 环境变量转换成路径")?;
@@ -120,7 +121,8 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
     let hiper_dir_path = get_hiper_dir()?;
     let certs_dir_path = hiper_dir_path.join("certs");
 
-    let _tap_path = hiper_dir_path.join("tap-windows.exe");
+    #[cfg(windows)]
+    let tap_path = hiper_dir_path.join("tap-windows.exe");
     let wintun_path = hiper_dir_path.join("wintun.dll");
     let wintun_disabled_path = hiper_dir_path.join("wintun.dll.disabled");
     #[cfg(windows)]
@@ -141,8 +143,50 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
     if cert_path.is_file() {
         // 确认配置是否设定了日志格式
         let mut cert_data = std::fs::read_to_string(&cert_path).context("无法读取检查凭证证书")?;
+        let mut should_save = false;
+
+        // 更新节点的代理信息
+
+        let auto_sync_area_begin = "\
+        # --------------------------------------------------------------------------------------\n\
+        #                        WARNING >>> AUTO SYNC AREA\n\
+        # --------------------------------------------------------------------------------------\
+        ";
+
+        let auto_sync_area_end = "\
+        # --------------------------------------------------------------------------------------\n\
+        #                        WARNING <<< AUTO SYNC AREA\n\
+        # --------------------------------------------------------------------------------------\
+        ";
+
+        if let Some(start_pos) = cert_data.find(auto_sync_area_begin) {
+            if let Some(end_pos) = cert_data.find(auto_sync_area_end) {
+                if start_pos < end_pos {
+                    let _ = ctx.submit_command(SET_START_TEXT, "正在更新节点信息", Target::Auto);
+                    println!("Updating point data");
+                    if let Ok(res) = tinyget::get("https://cert.mcer.cn/point.yml").send() {
+                        if res.status_code == 200 {
+                            if let Ok(point_data) = res.as_str() {
+                                cert_data = format!(
+                                    "{}{}{}",
+                                    &cert_data[..start_pos],
+                                    point_data,
+                                    &cert_data[end_pos + auto_sync_area_end.len()..]
+                                );
+                                should_save = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if !cert_data.contains(logger_json_data) {
             cert_data.push_str(logger_json_data);
+            should_save = true;
+        }
+
+        if should_save {
             write_file_safe(&cert_path, cert_data.as_bytes()).context("无法保存凭证证书")?;
         }
     } else {
