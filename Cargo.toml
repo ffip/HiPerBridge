@@ -16,7 +16,7 @@ scl-gui-widgets = { path = "../SharpCraftLauncher/scl-gui-widgets" }
 
 anyhow = "1.0"
 clipboard = "0.5"
-druid = { git = "https://github.com/Steve-xmh/druid.git", features = ["im"] }
+druid = { git = "https://github.com/linebender/druid.git", features = ["im"] }
 oneshot = "0.1.3"
 sha1_smol = { version = "1", features = ["std"] }
 path-absolutize = "3.0"

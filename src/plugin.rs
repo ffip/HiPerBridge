@@ -4,9 +4,10 @@ use std::{
 };
 
 use anyhow::Context;
+use druid::{ExtEventSink, Target};
 use tinyjson::*;
 
-use crate::{hiper::get_hiper_dir, DynResult};
+use crate::{hiper::get_hiper_dir, DynResult, ui::{SET_START_TEXT, SET_WARNING}};
 
 trait TinyJsonGet {
     fn try_get(&self, key: &str) -> Option<&JsonValue>;
@@ -82,6 +83,23 @@ pub fn load_plugins() -> Vec<Plugin> {
         }
     }
     vec![]
+}
+
+pub fn update_plugins(ctx: ExtEventSink) {
+    let _ = ctx.submit_command(SET_START_TEXT, "正在检查插件更新", Target::Auto);
+    let _ = ctx.submit_command(SET_WARNING, "".to_string(), Target::Auto);
+    
+    for plugin in load_plugins() {
+        if !plugin.update_url.is_empty() {
+            if let Ok(res) = tinyget::get(&plugin.update_url).send() {
+                if res.status_code == 200 {
+                    if let Ok(Ok(update_meta)) = res.as_str().map(PluginUpdateMeta::from_str) {
+                        
+                    }
+                }
+            }
+        }
+    }
 }
 
 pub struct Plugin {
@@ -328,6 +346,12 @@ impl PluginScript {
 }
 
 impl PluginUpdateMeta {
+    pub fn from_str(data: &str) -> DynResult<Self> {
+        let value = data.parse::<JsonValue>()
+            .context("无法解析插件更新元数据 JSON 文件")?;
+        Self::from_json(&value)
+    }
+    
     pub fn from_json(value: &JsonValue) -> DynResult<Self> {
         let version = value
             .try_get_into::<String>("version")
