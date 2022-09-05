@@ -196,9 +196,13 @@ impl TrayIcon {
                 match lparam.0 as u32 & 0xFFFF {
                     WM_LBUTTONUP => {
                         // 显示窗口
-                        TRAY.ctx
-                            .as_ref()
-                            .map(|x| x.submit_command(crate::ui::SHOW_HIPER_WINDOW, (), druid::Target::Global));
+                        TRAY.ctx.as_ref().map(|x| {
+                            x.submit_command(
+                                crate::ui::SHOW_HIPER_WINDOW,
+                                (),
+                                druid::Target::Global,
+                            )
+                        });
                         if let Some(sx) = &TRAY.sx {
                             let _ = sx.send(TrayMessage::ShowWindow);
                         }
@@ -227,7 +231,11 @@ impl TrayIcon {
                         match cmd {
                             1 => {
                                 TRAY.ctx.as_ref().map(|x| {
-                                    x.submit_command(crate::ui::SHOW_HIPER_WINDOW, (), druid::Target::Global)
+                                    x.submit_command(
+                                        crate::ui::SHOW_HIPER_WINDOW,
+                                        (),
+                                        druid::Target::Global,
+                                    )
                                 });
                                 if let Some(sx) = &TRAY.sx {
                                     let _ = sx.send(TrayMessage::ShowWindow);
@@ -236,7 +244,11 @@ impl TrayIcon {
                             2 => {
                                 TRAY.should_exit = true;
                                 TRAY.ctx.as_ref().map(|x| {
-                                    x.submit_command(druid::commands::CLOSE_ALL_WINDOWS, (), druid::Target::Global)
+                                    x.submit_command(
+                                        druid::commands::CLOSE_ALL_WINDOWS,
+                                        (),
+                                        druid::Target::Global,
+                                    )
                                 });
                                 if let Some(sx) = &TRAY.sx {
                                     let _ = sx.send(TrayMessage::Exit);

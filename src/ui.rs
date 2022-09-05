@@ -2,8 +2,8 @@ use druid::{widget::Flex, *};
 
 use scl_gui_widgets::{
     theme::icons::{IconColorKey, IconKeyPair, IconPathKey},
-    widget_ext::WidgetExt as _,
     widgets::*,
+    WidgetExt as _,
 };
 
 use std::{fmt::Write, time::Duration};
@@ -160,12 +160,10 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                 )
                 .with_spacer(10.)
                 .with_child(
-                    IconButton::new(scl_gui_widgets::theme::icons::SETTINGS).on_click(
-                        |ctx, _, _| {
-                            ctx.submit_command(ENABLE_BACK_PAGE.with(true));
-                            ctx.submit_command(PUSH_PAGE.with("setting"));
-                        },
-                    ),
+                    IconButton::new(crate::icons::SETTINGS).on_click(|ctx, _, _| {
+                        ctx.submit_command(ENABLE_BACK_PAGE.with(true));
+                        ctx.submit_command(PUSH_PAGE.with("setting"));
+                    }),
                 )
                 .must_fill_main_axis(true),
         )

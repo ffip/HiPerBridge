@@ -1,13 +1,20 @@
 use std::{
+    io::{Cursor, Read},
     path::{Path, PathBuf},
     process::Child,
 };
 
 use anyhow::Context;
 use druid::{ExtEventSink, Target};
+use path_absolutize::Absolutize;
 use tinyjson::*;
 
-use crate::{hiper::get_hiper_dir, DynResult, ui::{SET_START_TEXT, SET_WARNING}};
+use crate::{
+    hiper::get_hiper_dir,
+    ui::{SET_START_TEXT, SET_WARNING},
+    utils::write_file_safe,
+    DynResult,
+};
 
 trait TinyJsonGet {
     fn try_get(&self, key: &str) -> Option<&JsonValue>;
@@ -88,13 +95,67 @@ pub fn load_plugins() -> Vec<Plugin> {
 pub fn update_plugins(ctx: ExtEventSink) {
     let _ = ctx.submit_command(SET_START_TEXT, "正在检查插件更新", Target::Auto);
     let _ = ctx.submit_command(SET_WARNING, "".to_string(), Target::Auto);
-    
+
     for plugin in load_plugins() {
         if !plugin.update_url.is_empty() {
             if let Ok(res) = tinyget::get(&plugin.update_url).send() {
                 if res.status_code == 200 {
                     if let Ok(Ok(update_meta)) = res.as_str().map(PluginUpdateMeta::from_str) {
-                        
+                        if update_meta.version != plugin.version {
+                            if let Some(target_download) =
+                                update_meta.downloads.iter().find(|x| x.is_downloadable())
+                            {
+                                let _ = ctx.submit_command(
+                                    SET_START_TEXT,
+                                    "正在更新插件",
+                                    Target::Auto,
+                                );
+                                let mut buf = Vec::with_capacity(4096);
+                                if let Ok(res) = tinyget::get(&target_download.url).send() {
+                                    if res.status_code == 200 {
+                                        let r = Cursor::new(res.as_bytes());
+                                        if let Ok(mut z) = zip::ZipArchive::new(r) {
+                                            for i in 0..z.len() {
+                                                if let Ok(mut e) = z.by_index(i) {
+                                                    if let Ok(final_path) = plugin
+                                                        .path
+                                                        .join(e.name())
+                                                        .absolutize()
+                                                        .map(PathBuf::from)
+                                                    {
+                                                        // 确保不会恶意写入到外部
+                                                        if final_path.starts_with(&plugin.path) {
+                                                            if e.is_file() {
+                                                                if let Some(parent_dir) =
+                                                                    final_path.parent()
+                                                                {
+                                                                    let _ = std::fs::create_dir_all(
+                                                                        parent_dir,
+                                                                    );
+                                                                    if let Ok(l) =
+                                                                        e.read_to_end(&mut buf)
+                                                                    {
+                                                                        let _ = write_file_safe(
+                                                                            final_path,
+                                                                            &buf[0..l],
+                                                                        );
+                                                                        buf.clear();
+                                                                    }
+                                                                }
+                                                            } else if e.is_dir() {
+                                                                let _ = std::fs::create_dir_all(
+                                                                    final_path,
+                                                                );
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -137,11 +198,15 @@ impl Plugin {
     pub fn from_path(path: impl AsRef<Path>) -> DynResult<Self> {
         let data = std::fs::read_to_string(path.as_ref())?;
         let mut result = Self::from_str(&data)?;
-        result.path = path
-            .as_ref()
-            .parent()
-            .ok_or_else(|| anyhow::anyhow!("元数据所在路径父文件夹有误"))?
-            .to_owned();
+        result.path = PathBuf::from(
+            (path
+                .as_ref()
+                .parent()
+                .ok_or_else(|| anyhow::anyhow!("元数据所在路径父文件夹有误"))?
+                .to_owned())
+            .absolutize()
+            .context("无法获取元数据所在路径父文件夹的绝对路径")?,
+        );
         Ok(result)
     }
 
@@ -347,11 +412,12 @@ impl PluginScript {
 
 impl PluginUpdateMeta {
     pub fn from_str(data: &str) -> DynResult<Self> {
-        let value = data.parse::<JsonValue>()
+        let value = data
+            .parse::<JsonValue>()
             .context("无法解析插件更新元数据 JSON 文件")?;
         Self::from_json(&value)
     }
-    
+
     pub fn from_json(value: &JsonValue) -> DynResult<Self> {
         let version = value
             .try_get_into::<String>("version")

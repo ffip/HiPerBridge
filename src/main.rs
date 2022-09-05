@@ -11,11 +11,12 @@ use druid::{
     WidgetExt as _, *,
 };
 use hiper::run_hiper_in_thread;
-use scl_gui_widgets::{widget_ext::WidgetExt as _, widgets::*};
+use scl_gui_widgets::{widgets::*, WidgetExt as _};
 
 mod app_state;
 mod config;
 mod hiper;
+mod icons;
 mod log_parser;
 mod open_url;
 mod plugin;
@@ -178,17 +179,11 @@ fn main() {
             );
 
             env.set(
-                scl_gui_widgets::theme::icons::SETTINGS.0,
+                icons::SETTINGS.0,
                 include_str!("../assets/setting-path.txt"),
             );
-            env.set(
-                scl_gui_widgets::theme::icons::SETTINGS.1,
-                Color::Rgba32(0x212121FF),
-            );
-            env.set(
-                scl_gui_widgets::theme::icons::SETTINGS.2,
-                Color::Rgba32(0xFFFFFFFF),
-            );
+            env.set(icons::SETTINGS.1, Color::Rgba32(0x212121FF));
+            env.set(icons::SETTINGS.2, Color::Rgba32(0xFFFFFFFF));
 
             env.set(
                 crate::ui::CLIPBOARD_TEXT_PATH,

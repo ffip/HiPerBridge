@@ -99,6 +99,7 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
     }
     #[cfg(target_os = "linux")]
     {
+        use std::str::FromStr;
         PathBuf::from_str("/etc/hiper").context("无法将路径字符串转换成路径")
     }
     #[cfg(target_os = "macos")]
@@ -113,6 +114,8 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
 
 pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: bool) -> DynResult {
     println!("Launching hiper using token {}", token);
+
+    crate::plugin::update_plugins(ctx.to_owned());
 
     let has_token = !token.is_empty();
     let _ = ctx.submit_command(SET_START_TEXT, "正在检查所需文件", Target::Auto);
