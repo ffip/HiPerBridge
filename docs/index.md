@@ -12,7 +12,7 @@
 
 <div>
   <div class="name">HiPer Bridge</div>
-  <div>一个为 HiPer 组网模块制作的极简轻量型图形页面</div>
+  <div>一个为 HiPer 跨区域组网模块制作的极简轻量型图形界面</div>
 </div>
 
 <a href="https://github.com/Steve-xmh/HiPerBridge/releases/latest">前往 Github 下载 HiPer Bridge</a>
@@ -34,7 +34,7 @@
 
 ## 够强大
 
-配合强大的 HiPer/Matrix 组网模块，让你与任何人相连，唯一的限制只是你的网络带宽。
+配合强大的 HiPer/Matrix 跨区域组网模块，让你与任何人相连，唯一的限制只是你的网络带宽。
 
 <!-- 为了不让标题改变留一个空标题在底下 -->
 # 
