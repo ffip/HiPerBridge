@@ -12,7 +12,7 @@
 
 <div>
   <div class="name">HiPer Bridge</div>
-  <div>一个为 HiPer 内网穿透联机模块制作的极简轻量型图形页面</div>
+  <div>一个为 HiPer 组网模块制作的极简轻量型图形页面</div>
 </div>
 
 <a href="https://github.com/Steve-xmh/HiPerBridge/releases/latest">前往 Github 下载 HiPer Bridge</a>
