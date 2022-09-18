@@ -1,0 +1,35 @@
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+    Edit paths to match your environment
+    Copy to /Library/LaunchDaemons/com.matrix.hiper.plist
+    To enable 'sudo launchctl load /Library/LaunchDaemons/com.matrix.hiper.plist'
+-->
+<plist version="1.0">
+<dict>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+    <key>NetworkState</key>
+    <true/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+  <key>Label</key>
+  <string>com.matrix.hiper</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/hiper</string>
+    <string>-config</string>
+    <string>/etc/hiper/config.yml</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>UserName</key>
+  <string>root</string>
+  <key>StandardErrorPath</key>
+  <string>/var/log/hiper.err</string>
+  <key>StandardOutPath</key>
+  <string>/var/log/hiper.log</string>
+</dict>
+</plist>
