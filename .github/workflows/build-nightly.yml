@@ -44,12 +44,12 @@ jobs:
             ssh-private-key: ${{ secrets.SCL_CLONE_KEY }}
       - name: 克隆 SCL 源代码仓库
         run: git clone --depth=1 git@github.com:Steve-xmh/SharpCraftLauncher.git ./SharpCraftLauncher
-      - name: 安装 GTK 3.0 和 Webkit2GTK 4.0 开发依赖
+      - name: 安装 GTK 3.0 等开发依赖
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo DEBIAN_FRONTEND=noninteractive apt-get -yq update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libgtk-3-dev libwebkit2gtk-4.0-dev
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libgtk-3-dev libxcb-shape0-dev libxcb-xfixes0-dev
       - name: 安装 nightly 频道的 Rust 编译器套件
         uses: actions-rs/toolchain@v1.0.6
         with:
@@ -79,9 +79,6 @@ jobs:
             ssh-private-key: ${{ secrets.SCL_CLONE_KEY }}
       - name: 克隆 SCL 源代码仓库
         run: git clone --depth=1 git@github.com:Steve-xmh/SharpCraftLauncher.git ./SharpCraftLauncher
-      - name: 构建 HiPer Bridge
-        run: sh ./scripts/build-mac.sh
-        working-directory: HiPerBridge
       - name: 安装 nightly 频道的 Rust 编译器套件
         uses: actions-rs/toolchain@v1.0.6
         with:
@@ -90,6 +87,9 @@ jobs:
           components: rust-src
           override: true
           default: true
+      - name: 构建 HiPer Bridge
+        run: sh ./scripts/build-mac.sh
+        working-directory: HiPerBridge
       - name: 上传构建结果
         uses: actions/upload-artifact@v3
         with:
