@@ -1,0 +1,110 @@
+name: Build Nightly
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build-windows:
+    name: 构建 Windows 版本
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: HiPerBridge
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+            ssh-private-key: ${{ secrets.SCL_CLONE_KEY }}
+      - name: 克隆 SCL 源代码仓库
+        uses: actions/checkout@v2
+        with:
+          repository: Steve-xmh/SharpCraftLauncher
+          path: SharpCraftLauncher
+      - name: 安装 nightly 频道的 Rust 编译器套件
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: nightly
+          target: i686-pc-windows-msvc
+          components: rust-src
+          override: true
+          default: true
+      - name: 构建 HiPer Bridge
+        run: sh ./scripts/build-mac.sh
+        working-directory: HiPerBridge
+      - name: 构建 Windows 发行版本
+        run: cargo +nightly build --target=i686-pc-windows-msvc --release -Z build-std=core,alloc,std,panic_abort -Z build-std-features=panic_immediate_abort --verbose
+        working-directory: HiPerBridge
+      - name: 上传构建结果
+        uses: actions/upload-artifact@v3
+        with:
+          name: hiper-bridge.exe
+          path: HiPerBridge/target/i686-pc-windows-msvc/release/hiper-bridge.exe
+  build-linux:
+    name: 构建 Linux 版本
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: HiPerBridge
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+            ssh-private-key: ${{ secrets.SCL_CLONE_KEY }}
+      - name: 克隆 SCL 源代码仓库
+        uses: actions/checkout@v2
+        with:
+          repository: Steve-xmh/SharpCraftLauncher
+          path: SharpCraftLauncher
+      - name: 安装 GTK 3.0 和 Webkit2GTK 4.0 开发依赖
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -yq update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install libgtk-3-dev libwebkit2gtk-4.0-dev
+      - name: 安装 nightly 频道的 Rust 编译器套件
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: nightly
+          target: x86_64-unknown-linux-gnu
+          components: rust-src
+          override: true
+          default: true
+      - name: 构建 Linux 发行版本
+        run: |
+          cargo +nightly build --target=x86_64-unknown-linux-gnu --release -Z build-std=core,alloc,std,panic_abort -Z build-std-features=panic_immediate_abort --verbose
+        working-directory: HiPerBridge
+      - name: 上传构建结果
+        uses: actions/upload-artifact@v3
+        with:
+          name: hiper-bridge-linux-x86_64
+          path: HiPerBridge/target/i686-pc-windows-msvc/release/hiper-bridge.exe
+  build-macos:
+    name: 构建 MacOS 版本
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: HiPerBridge
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+            ssh-private-key: ${{ secrets.SCL_CLONE_KEY }}
+      - name: 克隆 SCL 源代码仓库
+        uses: actions/checkout@v2
+        with:
+          repository: Steve-xmh/SharpCraftLauncher
+          path: SharpCraftLauncher
+      - name: 构建 HiPer Bridge
+        run: sh ./scripts/build-mac.sh
+        working-directory: HiPerBridge
+      - name: 安装 nightly 频道的 Rust 编译器套件
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: nightly
+          target: x86_64-apple-darwin
+          components: rust-src
+          override: true
+          default: true
+      - name: 上传构建结果
+        uses: actions/upload-artifact@v3
+        with:
+          name: HiPerBridge-universal-darwin.tar.gz
+          path: HiPerBridge/target/HiPerBridge-universal-darwin.tar.gz
+      
