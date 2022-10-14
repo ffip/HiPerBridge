@@ -24,9 +24,6 @@ jobs:
           components: rust-src
           override: true
           default: true
-      - name: 构建 HiPer Bridge
-        run: sh ./scripts/build-mac.sh
-        working-directory: HiPerBridge
       - name: 构建 Windows 发行版本
         run: cargo +nightly build --target=i686-pc-windows-msvc --release -Z build-std=core,alloc,std,panic_abort -Z build-std-features=panic_immediate_abort --verbose
         working-directory: HiPerBridge
