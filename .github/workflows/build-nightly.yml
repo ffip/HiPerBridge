@@ -15,10 +15,7 @@ jobs:
         with:
             ssh-private-key: ${{ secrets.SCL_CLONE_KEY }}
       - name: 克隆 SCL 源代码仓库
-        uses: actions/checkout@v2
-        with:
-          repository: Steve-xmh/SharpCraftLauncher
-          path: SharpCraftLauncher
+        run: git clone --depth=1 git@github.com:Steve-xmh/SharpCraftLauncher.git ./SharpCraftLauncher
       - name: 安装 nightly 频道的 Rust 编译器套件
         uses: actions-rs/toolchain@v1.0.6
         with:
@@ -49,10 +46,7 @@ jobs:
         with:
             ssh-private-key: ${{ secrets.SCL_CLONE_KEY }}
       - name: 克隆 SCL 源代码仓库
-        uses: actions/checkout@v2
-        with:
-          repository: Steve-xmh/SharpCraftLauncher
-          path: SharpCraftLauncher
+        run: git clone --depth=1 git@github.com:Steve-xmh/SharpCraftLauncher.git ./SharpCraftLauncher
       - name: 安装 GTK 3.0 和 Webkit2GTK 4.0 开发依赖
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -87,10 +81,7 @@ jobs:
         with:
             ssh-private-key: ${{ secrets.SCL_CLONE_KEY }}
       - name: 克隆 SCL 源代码仓库
-        uses: actions/checkout@v2
-        with:
-          repository: Steve-xmh/SharpCraftLauncher
-          path: SharpCraftLauncher
+        run: git clone --depth=1 git@github.com:Steve-xmh/SharpCraftLauncher.git ./SharpCraftLauncher
       - name: 构建 HiPer Bridge
         run: sh ./scripts/build-mac.sh
         working-directory: HiPerBridge
