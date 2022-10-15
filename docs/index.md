@@ -17,7 +17,7 @@
 
 <a href="https://github.com/Steve-xmh/HiPerBridge/releases/latest">前往 Github 下载 HiPer Bridge</a>
 <div></div>
-<a href="https://mcer.cn/">购买 HiPer 服务</a>
+<a href="https://zkitefly.github.io/hipertoken.html">购买 HiPer 服务</a>
 
 </div>
 
