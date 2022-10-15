@@ -31,4 +31,4 @@ https://afdian.net/@SteveXMH
 ## 关联项目
 
 ### Sharp Craft Launcher | 一个轻量、简洁、敏捷的Minecraft启动器 | https://steve-xmh.github.io/scl
-### HiPer / Matrix | 一款轻量、敏捷、去中心化的跨区域组网系统 |  https://mcer.cn
+### HiPer / Matrix | 一款轻量、敏捷、去中心化的跨区域组网系统 |  https://www.the.bb/zh-cn
