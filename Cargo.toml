@@ -30,6 +30,11 @@ chrono = "0.4.22"
 dirs = "4.0.0"
 zip = "^0.6.2"
 
+[target.'cfg(target_os = "macos")'.dependencies]
+objc = "*"
+cocoa = "*"
+core-foundation = "*"
+
 [target.'cfg(unix)'.dependencies.nix]
 version = "*"
 features = ["process", "user"]

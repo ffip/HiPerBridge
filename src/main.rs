@@ -23,6 +23,8 @@ mod plugin;
 mod tray;
 mod ui;
 mod utils;
+#[cfg(target_os = "macos")]
+mod mac;
 
 pub type DynResult<T = ()> = std::result::Result<T, anyhow::Error>;
 

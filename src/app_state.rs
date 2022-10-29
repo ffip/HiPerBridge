@@ -42,6 +42,10 @@ pub struct AppState {
     pub auto_restart: bool,
     pub debug_mode: bool,
     pub kill_hiper_when_start: bool,
+    #[cfg(target_os = "macos")]
+    pub init_message: String,
+    #[cfg(target_os = "macos")]
+    pub running_script: bool
 }
 
 impl Default for AppState {
@@ -57,6 +61,10 @@ impl Default for AppState {
             auto_restart: true,
             debug_mode: false,
             kill_hiper_when_start: true,
+            #[cfg(target_os = "macos")]
+            init_message: "".into(),
+            #[cfg(target_os = "macos")]
+            running_script: false,
         }
     }
 }

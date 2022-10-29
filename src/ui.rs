@@ -241,6 +241,51 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .boxed()
 }
 
+#[cfg(target_os = "macos")]
+fn mac_init() -> Box<dyn Widget<AppState>> {
+    use std::result;
+
+    Flex::column()
+        .with_child(label::new("提权初始化提示").with_text_size(16.))
+        .with_spacer(10.)
+        .with_child(label::new("由于 MacOS 严格的权限体系，HiPer Bridge 需要权限以注册 HiPer 系统网络服务，若出现验证提示，请通过验证允许。"))
+        .with_spacer(5.)
+        .with_child(label::new("（反正要怪就怪 MacOS 吧（摆手））"))
+        .with_flex_spacer(1.)
+        .with_flex_child(
+            label::dynamic(|data: &AppState, _|
+                data.init_message.to_owned()
+            )
+            .scroll()
+            .vertical()
+            .expand(),
+            1.
+        )
+        .with_flex_spacer(1.)
+        .with_child(Button::new("允许并授权初始化 HiPer Bridge").with_accent(true).on_click(|ctx, _, _| {
+            let ctx = ctx.get_external_handle();
+            std::thread::spawn(move || {
+                if let Err(err) = crate::mac::install_hiper(ctx.to_owned()) {
+                    ctx.add_idle_callback(move |data: &mut AppState| {
+                        data.init_message = format!("安装出错，请重试：\n{}", err);
+                        data.running_script = false;
+                    });
+                } else {
+                    let _ = ctx.submit_command(QUERY_POP_PAGE, "", Target::Auto);
+                    let _ = ctx.submit_command(ENABLE_BACK_PAGE, true, Target::Auto);
+                    ctx.add_idle_callback(|data: &mut AppState| {
+                        data.init_message = "".into();
+                        data.running_script = false;
+                    });
+                }
+            });
+        }).disabled_if(|data: &AppState, _| data.running_script))
+        .cross_axis_alignment(widget::CrossAxisAlignment::Fill)
+        .padding((10., 10.))
+        .expand()
+        .boxed()
+}
+
 pub struct AppWrapper {
     inner: WidgetPod<AppState, Box<dyn Widget<AppState>>>,
     run_timer: TimerToken,
@@ -270,6 +315,14 @@ impl Widget<AppState> for AppWrapper {
                 } else {
                     data.run_time = 0;
                     self.run_timer = ctx.request_timer(Duration::from_secs(1));
+                }
+            }
+        } else if let Event::WindowConnected = event {
+            #[cfg(target_os = "macos")]
+            {
+                if !crate::mac::is_hiper_installed() {
+                    ctx.submit_command(PUSH_PAGE.with("mac-init"));
+                    ctx.submit_command(ENABLE_BACK_PAGE.with(false));
                 }
             }
         }
@@ -303,9 +356,14 @@ impl Widget<AppState> for AppWrapper {
 }
 
 pub fn ui_builder() -> impl Widget<AppState> {
-    AppWrapper::new(
-        PageSwitcher::new()
-            .with_page("main", Box::new(main_page))
-            .with_page("setting", Box::new(setting_page)),
-    )
+    AppWrapper::new({
+        let mut pager = PageSwitcher::new();
+        pager.add_page("main", Box::new(main_page));
+        pager.add_page("setting", Box::new(setting_page));
+        #[cfg(target_os = "macos")]
+        {
+            pager.add_page("mac-init", Box::new(mac_init));
+        }
+        pager
+    })
 }

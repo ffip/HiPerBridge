@@ -3,6 +3,3 @@
 sh ./scripts/build-mac.sh $*
 rm -rf "/Applications/HiPer Bridge.app"
 cp -rf "./target/HiPer Bridge.app" "/Applications/HiPer Bridge.app"
-
-sudo chmod u+s "/Applications/HiPer Bridge.app"
-sudo chown root "/Applications/HiPer Bridge.app"
