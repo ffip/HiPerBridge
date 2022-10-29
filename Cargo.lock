@@ -909,7 +909,7 @@ dependencies = [
  "oneshot",
  "path-absolutize",
  "scl-gui-widgets",
- "scl-marco",
+ "scl-macro",
  "serde",
  "sha1_smol",
  "tinyget",
@@ -1672,10 +1672,12 @@ dependencies = [
 [[package]]
 name = "scl-gui-animation"
 version = "0.1.0"
+source = "git+https://github.com/Steve-xmh/scl.git?branch=main#be5a4dace44716c1f81aad3518ada957797e8fd1"
 
 [[package]]
 name = "scl-gui-widgets"
-version = "0.1.0"
+version = "1.0.0"
+source = "git+https://github.com/Steve-xmh/scl.git?branch=main#be5a4dace44716c1f81aad3518ada957797e8fd1"
 dependencies = [
  "cocoa",
  "druid",
@@ -1683,7 +1685,7 @@ dependencies = [
  "objc",
  "raw-window-handle",
  "scl-gui-animation",
- "scl-marco",
+ "scl-macro",
  "serde",
  "tracing",
  "winapi",
@@ -1692,8 +1694,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "scl-marco"
+name = "scl-macro"
 version = "0.1.1"
+source = "git+https://github.com/Steve-xmh/scl.git?branch=main#be5a4dace44716c1f81aad3518ada957797e8fd1"
 dependencies = [
  "quote",
  "syn",
