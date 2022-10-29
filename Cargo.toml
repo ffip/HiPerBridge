@@ -12,8 +12,8 @@ FileDescription = "HiPer Bridge - A GUI for HiPer Network Framework"
 LegalCopyright = "Copyright © SteveXMH 2020-2022"
 
 [dependencies]
-scl-gui-widgets = { path = "../SharpCraftLauncher/scl-gui-widgets" }
-scl-marco = { path = "../SharpCraftLauncher/scl-marco" }
+scl-gui-widgets = { git = "https://github.com/Steve-xmh/scl.git", branch = "main" }
+scl-macro = { git = "https://github.com/Steve-xmh/scl.git", branch = "main" }
 
 anyhow = "1.0"
 clipboard = "0.5"
