@@ -71,7 +71,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
 
                             format!(
                                 "HiPer 正在运行！\n网络地址：{}\n运行时间：{}\n授权截止：{}",
-                                data.ip, run_time_formated, data.valid
+                                data.ip, run_time_formated, data.valid_at
                             )
                         }
                     })
