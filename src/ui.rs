@@ -24,6 +24,7 @@ pub const CLIPBOARD_TEXT_PATH: IconPathKey = IconPathKey::new("clipboard-text-pa
 
 pub const SET_START_TEXT: Selector<&str> = Selector::new("set-start-text");
 pub const SET_IP: Selector<String> = Selector::new("set-ip");
+pub const SET_Valid: Selector<String> = Selector::new("set-valid");
 pub const SET_WARNING: Selector<String> = Selector::new("set-warning");
 pub const SET_DISABLED: Selector<bool> = Selector::new("set-disabled");
 pub const REQUEST_RESTART: Selector = Selector::new("request-restart");
@@ -69,8 +70,8 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                             let _ = write!(run_time_formated, "{:02}:{:02}", min, sec);
 
                             format!(
-                                "HiPer 正在运行！\n网络地址：{}\n运行时间：{}",
-                                data.ip, run_time_formated
+                                "HiPer 正在运行！\n网络地址：{}\n运行时间：{}\n授权截止：{}",
+                                data.ip, run_time_formated, data.valid
                             )
                         }
                     })
@@ -215,23 +216,19 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_child(label::new("轻量级 HiPer 启动器"))
         .with_child(label::new("By SteveXMH"))
         .with_spacer(10.)
+        .with_child(label::new("HiPer / Matrix"))
+        .with_child(label::new("一款轻量、敏捷、去中心化的跨区域组网系统"))
+        .with_spacer(10.)
+        .with_child(Button::new("协议及条款").on_click(|_, _, _| {
+            open_url("https://mp.weixin.qq.com/s/z-7-a3xErr-95xMfdeT4EQ");
+        }))
+        .with_spacer(10.)
         .with_child(Button::new("插件文档").on_click(|_, _, _| {
-            open_url("https://github.com/Steve-xmh/HiPerBridge/blob/main/PLUGIN.md");
+            open_url("https://github.com/ffip/HiPerBridge/blob/main/PLUGIN.md");
         }))
         .with_spacer(10.)
         .with_child(Button::new("爱发电").on_click(|_, _, _| {
             open_url("https://afdian.net/@SteveXMH");
-        }))
-        .with_spacer(10.)
-        .with_child(label::new("HiPer / Matrix"))
-        .with_child(label::new("一款轻量、敏捷、去中心化的跨区域组网系统"))
-        .with_spacer(10.)
-        .with_child(Button::new("用户服务协议").on_click(|_, _, _| {
-            open_url("https://mcer.cn/agreement");
-        }))
-        .with_spacer(5.)
-        .with_child(Button::new("隐私条款").on_click(|_, _, _| {
-            open_url("https://mcer.cn/privacy");
         }))
         .cross_axis_alignment(widget::CrossAxisAlignment::Fill)
         .padding((10., 10.))
@@ -249,8 +246,6 @@ fn mac_init() -> Box<dyn Widget<AppState>> {
         .with_child(label::new("提权初始化提示").with_text_size(16.))
         .with_spacer(10.)
         .with_child(label::new("由于 MacOS 严格的权限体系，HiPer Bridge 需要权限以注册 HiPer 系统网络服务，若出现验证提示，请通过验证允许。"))
-        .with_spacer(5.)
-        .with_child(label::new("（反正要怪就怪 MacOS 吧（摆手））"))
         .with_flex_spacer(1.)
         .with_flex_child(
             label::dynamic(|data: &AppState, _|

@@ -32,3 +32,14 @@ pub fn try_get_ipv4(line: &str) -> Option<String> {
     }
     None
 }
+
+pub fn try_get_valid(line: &str) -> Option<String> {
+    if let Ok(JsonValue::Object(log_data)) = line.parse::<JsonValue>() {
+        if let Some(JsonValue::Object(valid_log_data)) = log_data.get("valid") {
+            if let Some(JsonValue::String(valid_data)) = valid_log_data.get("valid") {
+                return Some(valid_data.to_owned());
+            }
+        }
+    }
+    None
+}

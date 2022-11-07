@@ -442,7 +442,14 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                                 sent = true;
                             }
                         }
-                    } else if let Some((level, _msg, error)) =
+                    }else if let Some(valid) = crate::log_parser::try_get_valid(line) {
+                        let _ = ctx_c.submit_command(
+                                        SET_VALID,
+                                        valid.to_string(),
+                                        Target::Auto,
+                                    );
+                                    sent = true;
+                    }else if let Some((level, _msg, error)) =
                         crate::log_parser::try_get_log_line(line)
                     {
                         if &level == "error" {
@@ -489,7 +496,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                         if let Ok(Some(_)) = child.try_wait() {
                             if let Some(sender) = sender.take() {
                                 sender.send("".into()).map_err(|x| {
-                                    anyhow::anyhow!("无法发送 IP 地址到父线程：{}", x.as_inner())
+                                    anyhow::anyhow!("无法发送消息到父线程：{}", x.as_inner())
                                 })?;
                             }
                             break;
@@ -588,6 +595,7 @@ pub fn stop_hiper(ctx: ExtEventSink) {
     let _ = ctx.submit_command(SET_START_TEXT, "正在关闭 HiPer", Target::Auto);
     let _ = ctx.submit_command(SET_WARNING, "".to_string(), Target::Auto);
     let _ = ctx.submit_command(SET_IP, "".to_string(), Target::Auto);
+    let _ = ctx.submit_command(SET_VALID, "".to_string(), Target::Auto);
 
     stop_hiper_directly();
 

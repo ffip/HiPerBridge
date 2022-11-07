@@ -120,6 +120,9 @@ fn main() {
                             data.ip = ip.to_owned();
                             tray::set_icon(!data.ip.is_empty());
                         })
+                        .on_command(SET_VALID, |_ctx, valid, data| {
+                            data.valid = valid.to_owned();
+                        })
                         .on_command(SET_WARNING, |_, warning, data| {
                             data.warning = warning.to_owned();
                         })
