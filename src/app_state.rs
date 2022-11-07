@@ -57,6 +57,7 @@ impl Default for AppState {
             start_button: "启动",
             ip: "".into(),
             warning: "".into(),
+            valid_at: "".into(),
             run_time: 0,
             use_tun: true,
             auto_restart: true,
