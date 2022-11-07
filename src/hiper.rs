@@ -443,7 +443,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                             }
                         }
                     }else if let Some(valid_at) = crate::log_parser::try_get_valid(line) {
-                        let _ = ctx.submit_command(SET_VALID, valid_at.to_string(), Target::Auto);
+                        et _ = ctx_c.submit_command(SET_VALID, valid_at.to_string(), Target::Auto);
                         sent = true;
                     }else if let Some((level, _msg, error)) =
                         crate::log_parser::try_get_log_line(line)
