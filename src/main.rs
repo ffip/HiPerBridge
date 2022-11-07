@@ -121,7 +121,7 @@ fn main() {
                             tray::set_icon(!data.ip.is_empty());
                         })
                         .on_command(SET_VALID, |_ctx, valid_at, data| {
-                            data.valid_at = valid.to_owned();
+                            data.valid_at = valid_at.to_owned();
                         })
                         .on_command(SET_WARNING, |_, warning, data| {
                             data.warning = warning.to_owned();

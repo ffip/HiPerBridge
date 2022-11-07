@@ -36,6 +36,7 @@ pub struct AppState {
     pub token: String,
     pub start_button: &'static str,
     pub ip: String,
+    pub valid_at: String,
     pub run_time: usize,
     pub warning: String,
     pub use_tun: bool,
