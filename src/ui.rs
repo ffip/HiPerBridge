@@ -24,7 +24,7 @@ pub const CLIPBOARD_TEXT_PATH: IconPathKey = IconPathKey::new("clipboard-text-pa
 
 pub const SET_START_TEXT: Selector<&str> = Selector::new("set-start-text");
 pub const SET_IP: Selector<String> = Selector::new("set-ip");
-pub const SET_Valid: Selector<String> = Selector::new("set-valid");
+pub const SET_VALID: Selector<String> = Selector::new("set-valid");
 pub const SET_WARNING: Selector<String> = Selector::new("set-warning");
 pub const SET_DISABLED: Selector<bool> = Selector::new("set-disabled");
 pub const REQUEST_RESTART: Selector = Selector::new("request-restart");
