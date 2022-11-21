@@ -98,15 +98,15 @@ pub fn update_plugins(ctx: ExtEventSink) {
 
     for plugin in load_plugins() {
         if plugin.update_url.is_empty() {
-            containue;
+            continue;
         }
         if let Ok(res) = tinyget::get(&plugin.update_url).send() {
             if res.status_code != 200 {
-                containue;
+                continue;
             }
             if let Ok(Ok(update_meta)) = res.as_str().map(PluginUpdateMeta::from_str) {
                 if update_meta.version == plugin.version {
-                    containue;
+                    continue;
                 }
                 if let Some(target_download) =
                 update_meta.downloads.iter().find(|x| x.is_downloadable())
@@ -119,7 +119,7 @@ pub fn update_plugins(ctx: ExtEventSink) {
                 let mut buf = Vec::with_capacity(4096);
                 if let Ok(res) = tinyget::get(&target_download.url).send() {
                     if res.status_code != 200 {
-                        containue;
+                        continue;
                     }
                     let r = Cursor::new(res.as_bytes());
                     if let Ok(mut z) = zip::ZipArchive::new(r) {
@@ -133,7 +133,7 @@ pub fn update_plugins(ctx: ExtEventSink) {
                                 {
                                     // 确保不会恶意写入到外部
                                     if !final_path.starts_with(&plugin.path) {
-                                        containue;
+                                        continue;
                                     }
                                     if e.is_file() {
                                         if let Some(parent_dir) =
