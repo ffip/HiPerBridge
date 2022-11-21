@@ -212,23 +212,15 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_spacer(10.)
         .with_child(label::new("关于"))
         .with_spacer(10.)
-        .with_child(label::new("HiPer Bridge v0.0.7"))
+        .with_child(label::new("HiPer Bridge v0.0.8"))
         .with_child(label::new("轻量级 HiPer 启动器"))
         .with_child(label::new("By SteveXMH"))
         .with_spacer(10.)
         .with_child(label::new("HiPer / Matrix"))
         .with_child(label::new("一款轻量、敏捷、去中心化的跨区域组网系统"))
         .with_spacer(10.)
-        .with_child(Button::new("协议及条款").on_click(|_, _, _| {
-            open_url("https://mp.weixin.qq.com/s/z-7-a3xErr-95xMfdeT4EQ");
-        }))
-        .with_spacer(10.)
-        .with_child(Button::new("插件文档").on_click(|_, _, _| {
-            open_url("https://github.com/ffip/HiPerBridge/blob/main/PLUGIN.md");
-        }))
-        .with_spacer(10.)
-        .with_child(Button::new("爱发电").on_click(|_, _, _| {
-            open_url("https://afdian.net/@SteveXMH");
+        .with_child(Button::new("使用帮助").on_click(|_, _, _| {
+            open_url("https://www.yuque.com/ffip/hiper/hb");
         }))
         .cross_axis_alignment(widget::CrossAxisAlignment::Fill)
         .padding((10., 10.))

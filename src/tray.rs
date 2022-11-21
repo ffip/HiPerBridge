@@ -105,7 +105,7 @@ impl TrayIcon {
             // 要保留一个托盘图标，需要维持一个窗口及其消息循环
             Self {
                 hwnd: Self::tray_thread(),
-                enable: false,
+                enable: true,
                 should_exit: false,
                 ctx: None,
                 sx: None,
