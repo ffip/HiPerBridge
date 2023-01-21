@@ -450,7 +450,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                     {
                         if &level == "error" {
                             match error.as_str() {
-                                "hiper certificate for this host is expired" => {
+                                "Hiper certificate for this point is expired" => {
                                     let _ = ctx_c.submit_command(
                                         SET_WARNING,
                                         "警告：凭证已过期！请使用新的凭证密钥重试！".to_string(),
