@@ -1,0 +1,18 @@
+{
+    "_version": 1,                                      
+        "id": "com.scl.plugin",                         
+        "name": "SCL",                                         
+        "plugin_version": "1.0.0",                          
+        "update_url": "https://gitcode.net/to/scl/-/raw/master/info.json",  
+        "scripts": [{                                       
+            "on": "launch",                                 
+            "system": "windows", 
+            "arch": "x86_64",                                                     
+            "debug": true,                                  
+            "commands": [                                   
+                    "echo Started!",
+                    "pwd"
+        ]
+    }]
+}
+

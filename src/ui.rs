@@ -70,7 +70,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                             let _ = write!(run_time_formated, "{:02}:{:02}", min, sec);
 
                             format!(
-                                "服务正在运行！\n网络地址：{}\n运行时间：{}\n授权截止：{}",
+                                "正在运行>\n网络地址：{}\n运行时间：{}\n授权截止：{}",
                                 data.ip, run_time_formated, data.valid_at
                             )
                         }
@@ -176,7 +176,6 @@ fn main_page() -> Box<dyn Widget<AppState>> {
 
 fn setting_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
-        .with_spacer(10.)
         .with_child(label::new("WinTAP / WinTUN"))
         .with_spacer(5.)
         .with_child(
@@ -215,8 +214,8 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_child(label::new("轻量级 HiPer 启动器"))
         .with_child(label::new("By SteveXMH"))
         .with_spacer(10.)
-        .with_child(label::new("HiPer"))
-        .with_child(label::new("一款安全、快速、稳定的组网系统"))
+        .with_child(label::new("HiPer / Matrix"))
+        .with_child(label::new("一款轻量、敏捷、去中心化的跨区域组网系统"))
         .with_spacer(10.)
         .with_child(Button::new("使用帮助").on_click(|_, _, _| {
             open_url("https://www.yuque.com/ffip/hiper/hb");
