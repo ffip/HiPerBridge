@@ -154,7 +154,7 @@ impl TrayIcon {
                 hWnd: hwnd,
                 uFlags: NIF_ICON | NIF_MESSAGE,
                 uCallbackMessage: Self::WM_USER_TRAYICON,
-                hIcon: LoadIconW(hinstance, w!("ICON_GRAY")).unwrap(),
+                hIcon: LoadIconW(hinstance, w!("ICON")).unwrap(),
                 Anonymous: NOTIFYICONDATAW_0 {
                     uVersion: NOTIFYICON_VERSION_4,
                 },
@@ -349,7 +349,7 @@ impl TrayIcon {
                 Anonymous: NOTIFYICONDATAW_0 {
                     uVersion: NOTIFYICON_VERSION_4,
                 },
-                hIcon: if enable {
+                hIcon: if self.enable {
                     LoadIconW(hinstance, w!("ICON")).unwrap()
                 } else {
                     LoadIconW(hinstance, w!("ICON_GRAY")).unwrap()

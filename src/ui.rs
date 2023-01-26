@@ -70,7 +70,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                             let _ = write!(run_time_formated, "{:02}:{:02}", min, sec);
 
                             format!(
-                                "HiPer 正在运行！\n网络地址：{}\n运行时间：{}\n授权截止：{}",
+                                "服务正在运行！\n网络地址：{}\n运行时间：{}\n授权截止：{}",
                                 data.ip, run_time_formated, data.valid_at
                             )
                         }
@@ -176,9 +176,8 @@ fn main_page() -> Box<dyn Widget<AppState>> {
 
 fn setting_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
-        .with_child(label::new("选项"))
         .with_spacer(10.)
-        .with_child(label::new("使用 WinTUN 而非 WinTAP"))
+        .with_child(label::new("WinTAP / WinTUN"))
         .with_spacer(5.)
         .with_child(
             ToggleSwitch::new()
@@ -186,7 +185,7 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
                 .disabled_if(|data: &AppState, _| !data.ip.is_empty()),
         )
         .with_spacer(10.)
-        .with_child(label::new("显示 HiPer 调试窗口"))
+        .with_child(label::new("调试模式"))
         .with_spacer(5.)
         .with_child(
             ToggleSwitch::new()
@@ -194,17 +193,17 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
                 .disabled_if(|data: &AppState, _| !data.ip.is_empty()),
         )
         .with_spacer(10.)
-        .with_child(label::new("发生错误时自动重启"))
+        .with_child(label::new("崩溃重启"))
         .with_spacer(5.)
         .with_child(ToggleSwitch::new().lens(AppState::auto_restart))
         .with_spacer(10.)
         .with_child(label::new(
-            "启动 HiPer Bridge 时关闭先前可能遗留的 HiPer 程序",
+            "单进程模式",
         ))
         .with_spacer(5.)
         .with_child(ToggleSwitch::new().lens(AppState::kill_hiper_when_start))
         .with_spacer(10.)
-        .with_child(Button::new("打开 HiPer 安装目录").on_click(|_, _, _| {
+        .with_child(Button::new("打开工作目录").on_click(|_, _, _| {
             if let Ok(hiper_dir) = get_hiper_dir() {
                 open_url(hiper_dir.to_string_lossy().to_string().as_str());
             }
@@ -216,8 +215,8 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_child(label::new("轻量级 HiPer 启动器"))
         .with_child(label::new("By SteveXMH"))
         .with_spacer(10.)
-        .with_child(label::new("HiPer / Matrix"))
-        .with_child(label::new("一款轻量、敏捷、去中心化的跨区域组网系统"))
+        .with_child(label::new("HiPer"))
+        .with_child(label::new("一款安全、快速、稳定的组网系统"))
         .with_spacer(10.)
         .with_child(Button::new("使用帮助").on_click(|_, _, _| {
             open_url("https://www.yuque.com/ffip/hiper/hb");
@@ -237,7 +236,7 @@ fn mac_init() -> Box<dyn Widget<AppState>> {
     Flex::column()
         .with_child(label::new("提权初始化提示").with_text_size(16.))
         .with_spacer(10.)
-        .with_child(label::new("由于 MacOS 严格的权限体系，HiPer Bridge 需要权限以注册 HiPer 系统网络服务，若出现验证提示，请通过验证允许。"))
+        .with_child(label::new("由于 MacOS 严格的权限体系，HiPer Bridge 需要管理员权限注册 HiPer 系统网络服务，若出现验证提示，请通过验证允许。"))
         .with_flex_spacer(1.)
         .with_flex_child(
             label::dynamic(|data: &AppState, _|
