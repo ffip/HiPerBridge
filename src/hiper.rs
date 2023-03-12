@@ -141,7 +141,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         .absolutize()
         .context("无法获取凭证证书所在绝对目录")?;
 
-    let logger_json_data = "\nlogging:\n  format: json";
+    let logger_json_data = "\nlogging:\n  format: json\nsync:\n  enable: false";
 
     if cert_path.is_file() {
         // 确认配置是否设定了日志格式
