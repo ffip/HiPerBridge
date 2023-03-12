@@ -20,7 +20,7 @@ jobs:
           override: true
           default: true
       - name: 构建 Windows 发行版本
-        run: cargo +nightly build --target=i686-pc-windows-msvc --release -Z build-std=core,alloc,std,panic_abort -Z build-std-features=panic_immediate_abort --verbose
+        run: cargo +stable build --target=i686-pc-windows-msvc --release -Z build-std=core,alloc,std,panic_abort -Z build-std-features=panic_immediate_abort --verbose
         working-directory: HiPerBridge
       - name: 上传构建结果
         uses: actions/upload-artifact@v3
