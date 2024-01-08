@@ -1,5 +1,5 @@
-use crate::{app_state::AppState, hiper::get_hiper_dir, DynResult};
-use std::{collections::HashMap, io::Write, path::PathBuf};
+use crate::{ app_state::AppState, hiper::get_hiper_dir, DynResult };
+use std::{ collections::HashMap, io::Write, path::PathBuf };
 use tinyjson::*;
 
 pub fn get_save_path() -> DynResult<PathBuf> {
@@ -9,30 +9,25 @@ pub fn get_save_path() -> DynResult<PathBuf> {
 
 pub fn save_config(app_state: &AppState) {
     if let Ok(save_path) = get_save_path() {
-        if let Ok(mut file) = std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(save_path)
+        if
+            let Ok(mut file) = std::fs::OpenOptions
+                ::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(save_path)
         {
             let mut data_hashmap = HashMap::with_capacity(16);
 
-            data_hashmap.insert(
-                "token".into(),
-                JsonValue::String(app_state.token.to_owned()),
-            );
+            data_hashmap.insert("token".into(), JsonValue::String(app_state.token.to_owned()));
             data_hashmap.insert("use_tun".into(), JsonValue::Boolean(app_state.use_tun));
-            data_hashmap.insert(
-                "auto_restart".into(),
-                JsonValue::Boolean(app_state.auto_restart),
-            );
-            data_hashmap.insert(
-                "debug_mode".into(),
-                JsonValue::Boolean(app_state.debug_mode),
-            );
+            data_hashmap.insert("use_tcp".into(), JsonValue::Boolean(app_state.use_tcp));
+            data_hashmap.insert("auto_restart".into(), JsonValue::Boolean(app_state.auto_restart));
+            data_hashmap.insert("fast_mode".into(), JsonValue::Boolean(app_state.fast_mode));
+            data_hashmap.insert("debug_mode".into(), JsonValue::Boolean(app_state.debug_mode));
             data_hashmap.insert(
                 "kill_hiper_when_start".into(),
-                JsonValue::Boolean(app_state.kill_hiper_when_start),
+                JsonValue::Boolean(app_state.kill_hiper_when_start)
             );
 
             let data = JsonValue::Object(data_hashmap);
@@ -55,27 +50,45 @@ pub fn load_config(app_state: &mut AppState) {
                             app_state.token = token.to_owned();
                         }
                     }
-                    if let Some(use_tun) = data
-                        .get("use_tun")
-                        .map(|x| x.get::<bool>().copied().unwrap_or(false))
+                    if
+                        let Some(use_tun) = data
+                            .get("use_tun")
+                            .map(|x| x.get::<bool>().copied().unwrap_or(false))
                     {
                         app_state.use_tun = use_tun;
                     }
-                    if let Some(auto_restart) = data
-                        .get("auto_restart")
-                        .map(|x| x.get::<bool>().copied().unwrap_or(false))
+                    if
+                        let Some(use_tcp) = data
+                            .get("use_tcp")
+                            .map(|x| x.get::<bool>().copied().unwrap_or(false))
+                    {
+                        app_state.use_tcp = use_tcp;
+                    }
+                    if
+                        let Some(auto_restart) = data
+                            .get("auto_restart")
+                            .map(|x| x.get::<bool>().copied().unwrap_or(false))
                     {
                         app_state.auto_restart = auto_restart;
                     }
-                    if let Some(debug_mode) = data
-                        .get("debug_mode")
-                        .map(|x| x.get::<bool>().copied().unwrap_or(false))
+                    if
+                        let Some(fast_mode) = data
+                            .get("fast_mode")
+                            .map(|x| x.get::<bool>().copied().unwrap_or(false))
+                    {
+                        app_state.fast_mode = fast_mode;
+                    }
+                    if
+                        let Some(debug_mode) = data
+                            .get("debug_mode")
+                            .map(|x| x.get::<bool>().copied().unwrap_or(false))
                     {
                         app_state.debug_mode = debug_mode;
                     }
-                    if let Some(kill_hiper_when_start) = data
-                        .get("kill_hiper_when_start")
-                        .map(|x| x.get::<bool>().copied().unwrap_or(true))
+                    if
+                        let Some(kill_hiper_when_start) = data
+                            .get("kill_hiper_when_start")
+                            .map(|x| x.get::<bool>().copied().unwrap_or(true))
                     {
                         app_state.kill_hiper_when_start = kill_hiper_when_start;
                     }

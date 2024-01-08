@@ -66,10 +66,17 @@ pub fn get_log_file_path() -> DynResult<PathBuf> {
     )
 }
 
-pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bool) {
+pub fn run_hiper_in_thread(
+    ctx: ExtEventSink,
+    token: String,
+    use_tun: bool,
+    use_tcp: bool,
+    fast_mode: bool,
+    debug_mode: bool
+) {
     std::thread::spawn(move || {
         let _ = ctx.submit_command(SET_DISABLED, true, Target::Auto);
-        match run_hiper(ctx.to_owned(), token, use_tun, debug_mode) {
+        match run_hiper(ctx.to_owned(), token, use_tun, use_tcp, fast_mode, debug_mode) {
             Ok(_) => {
                 println!("Launched!");
             }
@@ -112,7 +119,14 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
     }
 }
 
-pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: bool) -> DynResult {
+pub fn run_hiper(
+    ctx: ExtEventSink,
+    token: String,
+    use_tun: bool,
+    use_tcp: bool,
+    fast_mode: bool,
+    debug_mode: bool
+) -> DynResult {
     println!("Launching hiper using token {}", token);
 
     crate::plugin::update_plugins(ctx.to_owned());
@@ -264,6 +278,14 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         child.arg("-t");
     }
 
+    if !use_tcp {
+        child.arg("--tcp");
+    }
+
+    if fast_mode {
+        child.arg("--fast");
+    }
+
     let (sender, reciver) = oneshot::channel::<String>();
 
     let ctx_c = ctx.to_owned();
@@ -289,7 +311,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         plugin::dispatch_event("launch");
 
         #[cfg(all(windows, not(debug_assertions)))]
-        if _debug_mode {
+        if debug_mode {
             unsafe {
                 windows::Win32::System::Console::AllocConsole();
                 // 设置控制台关闭指令
@@ -446,7 +468,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
             }
         }
         #[cfg(all(windows, not(debug_assertions)))]
-        if _debug_mode {
+        if debug_mode {
             unsafe {
                 windows::Win32::System::Console::FreeConsole();
             }

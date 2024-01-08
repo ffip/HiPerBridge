@@ -135,10 +135,16 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                         .on_click(|ctx, data, _| {
                             let ctx = ctx.get_external_handle();
                             let token = data.token.to_owned();
-                            let use_tun = data.use_tun;
                             match data.start_button {
                                 "启动" => {
-                                    run_hiper_in_thread(ctx, token, use_tun, data.debug_mode);
+                                    run_hiper_in_thread(
+                                        ctx,
+                                        token,
+                                        data.use_tun,
+                                        data.use_tcp,
+                                        data.fast_mode,
+                                        data.debug_mode
+                                    );
                                 }
                                 "关闭" => {
                                     std::thread::spawn(move || {
@@ -189,6 +195,22 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_child(
             ToggleSwitch::new()
                 .lens(AppState::use_tun)
+                .disabled_if(|data: &AppState, _| !data.ip.is_empty())
+        )
+        .with_spacer(10.0)
+        .with_child(label::new("优先模式"))
+        .with_spacer(5.0)
+        .with_child(
+            ToggleSwitch::new()
+                .lens(AppState::fast_mode)
+                .disabled_if(|data: &AppState, _| !data.ip.is_empty())
+        )
+        .with_spacer(10.0)
+        .with_child(label::new("TCP模式"))
+        .with_spacer(5.0)
+        .with_child(
+            ToggleSwitch::new()
+                .lens(AppState::use_tcp)
                 .disabled_if(|data: &AppState, _| !data.ip.is_empty())
         )
         .with_spacer(10.0)

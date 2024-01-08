@@ -39,7 +39,9 @@ pub struct AppState {
     pub run_time: usize,
     pub warning: String,
     pub use_tun: bool,
+    pub use_tcp: bool,
     pub auto_restart: bool,
+    pub fast_mode: bool,
     pub debug_mode: bool,
     pub kill_hiper_when_start: bool,
     #[cfg(target_os = "macos")]
@@ -58,7 +60,9 @@ impl Default for AppState {
             warning: "".into(),
             run_time: 0,
             use_tun: true,
+            use_tcp: false,
             auto_restart: true,
+            fast_mode: false,
             debug_mode: false,
             kill_hiper_when_start: true,
             #[cfg(target_os = "macos")]
