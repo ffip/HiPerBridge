@@ -36,26 +36,6 @@ use windows::Win32::UI::Shell::{IsUserAnAdmin, ShellExecuteW};
 use windows::{core::PCWSTR, w};
 
 fn main() {
-    // Check if is admin
-    #[cfg(windows)]
-    unsafe {
-        if !IsUserAnAdmin().as_bool() {
-            use std::os::windows::ffi::OsStrExt;
-            let current_exe = std::env::current_exe().unwrap();
-            let current_exe = current_exe.as_os_str();
-            let current_exe = current_exe.encode_wide().chain(Some(0)).collect::<Vec<_>>();
-            println!("Not in Admin! Restarting as admin!");
-            ShellExecuteW(
-                None,
-                w!("runas"),
-                PCWSTR::from_raw(current_exe.as_ptr()),
-                w!(""),
-                w!(""),
-                1,
-            );
-            return;
-        }
-    }
     #[cfg(target_os = "linux")]
     {
         if !nix::unistd::getuid().is_root() {
@@ -115,9 +95,6 @@ fn main() {
                         })
                         .on_command(SET_IP, |_ctx, ip, data| {
                             data.ip = ip.to_owned();
-                        })
-                        .on_command(SET_VALID, |_, valid_at, data| {
-                            data.valid_at = valid_at.to_owned();
                         })
                         .on_command(SET_WARNING, |_, warning, data| {
                             data.warning = warning.to_owned();
