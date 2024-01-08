@@ -23,21 +23,10 @@ pub fn try_get_log_line(line: &str) -> Option<(String, String, String)> {
 }
 
 pub fn try_get_ipv4(line: &str) -> Option<String> {
-    if let Ok(JsonValue::Object(log_data)) = line.parse::<JsonValue>() {
-        if let Some(JsonValue::Object(network_data)) = log_data.get("network") {
-            if let Some(JsonValue::String(ip_data)) = network_data.get("IP") {
-                return Some(ip_data.to_owned());
-            }
-        }
-    }
-    None
-}
-
-pub fn try_get_valid(line: &str) -> Option<String> {
-    if let Ok(JsonValue::Object(log_data)) = line.parse::<JsonValue>() {
-        if let Some(JsonValue::String(valid_data)) = log_data.get("valid") {
-            return Some(valid_data.to_owned());
-        }
+    if line.contains("ip:") {
+        let virtual_ip = line.split("ip: ").last().unwrap();
+        let ip = virtual_ip.split(" ").next().unwrap();
+        return Some(ip.to_owned());
     }
     None
 }

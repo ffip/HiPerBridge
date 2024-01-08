@@ -11,16 +11,16 @@ jobs:
       - uses: actions/checkout@v2
         with:
           path: HiPerBridge
-      - name: 安装 stable 频道的 Rust 编译器套件
+      - name: 安装 nightly 频道的 Rust 编译器套件
         uses: actions-rs/toolchain@v1.0.6
         with:
-          toolchain: stable
+          toolchain: nightly
           target: i686-pc-windows-msvc
           components: rust-src
           override: true
           default: true
       - name: 构建 Windows 发行版本
-        run: cargo +stable build --target=i686-pc-windows-msvc --release -Z build-std=core,alloc,std,panic_abort -Z build-std-features=panic_immediate_abort --verbose
+        run: cargo +nightly build --target=i686-pc-windows-msvc --release -Z build-std=core,alloc,std,panic_abort -Z build-std-features=panic_immediate_abort --verbose
         working-directory: HiPerBridge
       - name: 上传构建结果
         uses: actions/upload-artifact@v3

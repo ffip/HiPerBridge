@@ -1,23 +1,23 @@
 use std::{
     fs::OpenOptions,
-    io::{BufRead, BufReader, Write},
+    io::{ BufRead, BufReader, Write },
     path::PathBuf,
-    process::{Command, Stdio},
-    sync::{
-        atomic::{AtomicBool, AtomicU32},
-        Mutex,
-    },
+    process::{ Command, Stdio },
+    sync::{ atomic::{ AtomicBool, AtomicU32 }, Mutex },
 };
 
-use crate::{plugin, ui::*, utils::write_file_safe, DynResult};
+use crate::{ plugin, ui::*, utils::write_file_safe, DynResult };
 use anyhow::Context;
-use druid::{ExtEventSink, Target};
-use path_absolutize::Absolutize;
+use druid::{ ExtEventSink, Target };
 #[cfg(windows)]
 use windows::Win32::System::{
-    ProcessStatus::{K32EnumDeviceDrivers, K32GetDeviceDriverBaseNameW},
+    ProcessStatus::{ K32EnumDeviceDrivers, K32GetDeviceDriverBaseNameW },
     Threading::{
-        OpenProcess, TerminateProcess, WaitForSingleObject, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE,
+        OpenProcess,
+        TerminateProcess,
+        WaitForSingleObject,
+        PROCESS_SYNCHRONIZE,
+        PROCESS_TERMINATE,
     },
 };
 
@@ -33,17 +33,15 @@ fn check_tap_installed() -> bool {
         K32EnumDeviceDrivers(
             drivers.as_mut_ptr(),
             drivers.capacity() as _,
-            &mut lpcb_needed,
-        )
-        .unwrap();
-        if lpcb_needed > drivers.capacity() as _ {
+            &mut lpcb_needed
+        ).unwrap();
+        if lpcb_needed > (drivers.capacity() as _) {
             drivers = Vec::with_capacity(lpcb_needed as _);
             K32EnumDeviceDrivers(
                 drivers.as_mut_ptr(),
                 drivers.capacity() as _,
-                &mut lpcb_needed,
-            )
-            .unwrap();
+                &mut lpcb_needed
+            ).unwrap();
         }
         drivers.set_len(lpcb_needed as _);
         let mut filename = vec![0; 256];
@@ -60,10 +58,12 @@ fn check_tap_installed() -> bool {
 
 pub fn get_log_file_path() -> DynResult<PathBuf> {
     use path_absolutize::*;
-    Ok(get_hiper_dir()?
-        .join("latest.log")
-        .absolutize()
-        .map(|x| x.to_path_buf())?)
+    Ok(
+        get_hiper_dir()?
+            .join("latest.log")
+            .absolutize()
+            .map(|x| x.to_path_buf())?
+    )
 }
 
 pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool, debug_mode: bool) {
@@ -78,7 +78,7 @@ pub fn run_hiper_in_thread(ctx: ExtEventSink, token: String, use_tun: bool, debu
                 let _ = ctx.submit_command(
                     SET_WARNING,
                     format!("启动时发生错误：{:?}", e),
-                    Target::Auto,
+                    Target::Auto
                 );
                 let _ = ctx.submit_command(SET_START_TEXT, "启动", Target::Auto);
             }
@@ -91,9 +91,9 @@ pub fn get_hiper_dir() -> DynResult<PathBuf> {
     #[cfg(windows)]
     {
         use std::str::FromStr;
-        let appdata =
-            PathBuf::from_str(&std::env::var("APPDATA").context("无法获取 APPDATA 环境变量")?)
-                .context("无法将 APPDATA 环境变量转换成路径")?;
+        let appdata = PathBuf::from_str(
+            &std::env::var("APPDATA").context("无法获取 APPDATA 环境变量")?
+        ).context("无法将 APPDATA 环境变量转换成路径")?;
         let hiper_dir_path = appdata.join("hiper");
         Ok(hiper_dir_path)
     }
@@ -122,7 +122,6 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
     let _ = ctx.submit_command(SET_WARNING, "".to_string(), Target::Auto);
 
     let hiper_dir_path = get_hiper_dir()?;
-    let certs_dir_path = hiper_dir_path.join("certs");
 
     #[cfg(windows)]
     let tap_path = hiper_dir_path.join("tap-windows.exe");
@@ -134,79 +133,6 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
     let hiper_path = hiper_dir_path.join("hiper");
 
     std::fs::create_dir_all(&hiper_dir_path).context("无法创建 HiPer 安装目录")?;
-    std::fs::create_dir_all(&certs_dir_path).context("无法创建 HiPer 凭证证书目录")?;
-
-    let cert_path = certs_dir_path.join(format!("{}.yml", token));
-    let cert_path = cert_path
-        .absolutize()
-        .context("无法获取凭证证书所在绝对目录")?;
-
-    let logger_json_data = "\nlogging:\n  format: json\nsync:\n  enable: false";
-
-    if cert_path.is_file() {
-        // 确认配置是否设定了日志格式
-        let mut cert_data = std::fs::read_to_string(&cert_path).context("无法读取检查凭证证书")?;
-        let mut should_save = false;
-
-        // 更新节点的代理信息
-
-        let auto_sync_area_begin = "\
-        # --------------------------------------------------------------------------------------\n\
-        #                        WARNING >>> AUTO SYNC AREA\n\
-        # --------------------------------------------------------------------------------------\
-        ";
-
-        let auto_sync_area_end = "\
-        # --------------------------------------------------------------------------------------\n\
-        #                        WARNING <<< AUTO SYNC AREA\n\
-        # --------------------------------------------------------------------------------------\
-        ";
-
-        if let Some(start_pos) = cert_data.find(auto_sync_area_begin) {
-            if let Some(end_pos) = cert_data.find(auto_sync_area_end) {
-                if start_pos < end_pos {
-                    let _ = ctx.submit_command(SET_START_TEXT, "正在更新节点信息", Target::Auto);
-                    println!("Updating point data");
-                    if let Ok(res) = tinyget::get("https://cert.mcer.cn/point.yml").send() {
-                        if res.status_code == 200 {
-                            if let Ok(point_data) = res.as_str() {
-                                cert_data = format!(
-                                    "{}{}{}",
-                                    &cert_data[..start_pos],
-                                    point_data,
-                                    &cert_data[end_pos + auto_sync_area_end.len()..]
-                                );
-                                should_save = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if !cert_data.contains(logger_json_data) {
-            cert_data.push_str(logger_json_data);
-            should_save = true;
-        }
-
-        if should_save {
-            write_file_safe(&cert_path, cert_data.as_bytes()).context("无法保存凭证证书")?;
-        }
-    } else {
-        let _ = ctx.submit_command(SET_START_TEXT, "正在获取凭证证书", Target::Auto);
-        let res = tinyget::get(format!("https://cert.mcer.cn/{}.yml", token))
-            .send()
-            .context("无法获取凭证证书，这有可能是因为下载超时或者是你的凭证无效")?;
-        if res.status_code != 200 {
-            anyhow::bail!("无法获取凭证证书，这有可能是因为下载超时或者是你的凭证无效");
-        }
-        let mut cert_data = res
-            .as_str()
-            .context("无法正确解码凭证证书数据，这有可能是下载出错了")?
-            .to_owned();
-        cert_data.push_str(logger_json_data);
-        write_file_safe(&cert_path, cert_data.as_bytes()).context("无法保存凭证证书")?;
-    }
 
     if !use_tun && wintun_path.exists() {
         std::fs::rename(&wintun_path, &wintun_disabled_path).context("无法禁用 WinTUN")?;
@@ -218,12 +144,15 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         #[cfg(windows)]
         if !wintun_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在下载安装 WinTUN", Target::Auto);
-            let res = tinyget::get(&format!(
-                "https://gitcode.net/to/hiper/-/raw/master/{}/wintun.dll",
-                crate::utils::get_system_arch()
-            ))
-            .send()
-            .context("无法下载 WinTUN")?;
+            let res = tinyget
+                ::get(
+                    &format!(
+                        "https://gitcode.net/qq_43650370/hiper/-/raw/master/{}/wintun.dll",
+                        crate::utils::get_system_arch()
+                    )
+                )
+                .send()
+                .context("无法下载 WinTUN")?;
             write_file_safe(&wintun_path, res.as_bytes()).context("无法安装 WinTUN")?;
         }
     } else {
@@ -231,19 +160,17 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         if !check_tap_installed() {
             if !tap_path.exists() {
                 let _ = ctx.submit_command(SET_START_TEXT, "正在下载 WinTAP", Target::Auto);
-                let res = tinyget::get(
-                    "https://gitcode.net/to/hiper/-/raw/master/tap-windows-9.21.2.exe",
-                )
-                .send()
-                .context("无法下载 WinTAP 安装程序")?;
+                let res = tinyget
+                    ::get(
+                        "https://gitcode.net/qq_43650370/hiper/-/raw/master/tap-windows-9.21.2.exe"
+                    )
+                    .send()
+                    .context("无法下载 WinTAP 安装程序")?;
                 write_file_safe(&tap_path, res.as_bytes()).context("无法写入 WinTAP 安装程序！")?;
             }
             let _ = ctx.submit_command(SET_START_TEXT, "正在安装 WinTAP", Target::Auto);
 
-            let c = Command::new(tap_path)
-                .arg("/S")
-                .status()
-                .context("无法运行 WinTAP 安装程序")?;
+            let c = Command::new(tap_path).arg("/S").status().context("无法运行 WinTAP 安装程序")?;
             c.code().context("无法安装 WinTAP")?;
         }
     }
@@ -253,12 +180,11 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
     if !HAS_UPDATED.load(std::sync::atomic::Ordering::SeqCst) {
         let arch = crate::utils::get_system_arch().to_string();
         #[cfg(windows)]
-        let download_url = format!(
-            "https://gitcode.net/to/hiper/-/raw/master/{}/hiper.exe",
-            arch
-        );
+        let download_url =
+            format!("https://gitcode.net/qq_43650370/hiper/-/raw/master/{}/hiper.exe", arch);
         #[cfg(not(windows))]
-        let download_url = format!("https://gitcode.net/to/hiper/-/raw/master/{}/hiper", arch);
+        let download_url =
+            format!("https://gitcode.net/qq_43650370/hiper/-/raw/master/{}/hiper", arch);
 
         if hiper_path.exists() {
             let _ = ctx.submit_command(SET_START_TEXT, "正在检查 HiPer 更新", Target::Auto);
@@ -268,7 +194,8 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
             s.update(&std::fs::read(&hiper_path).context("无法读取 HiPer 程序以计算摘要")?);
             let current_hash = s.hexdigest();
 
-            let res = tinyget::get("https://gitcode.net/to/hiper/-/raw/master/packages.sha1")
+            let res = tinyget
+                ::get("https://gitcode.net/qq_43650370/hiper/-/raw/master/packages.sha1")
                 .send()
                 .context("无法获取 HiPer 下载索引")?
                 .as_str()
@@ -284,16 +211,21 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                     if found {
                         println!("Comparing {} {} {} {}", arch, path, hash, current_hash);
                         if hash != current_hash {
-                            let _ =
-                                ctx.submit_command(SET_START_TEXT, "正在更新 HiPer", Target::Auto);
+                            let _ = ctx.submit_command(
+                                SET_START_TEXT,
+                                "正在更新 HiPer",
+                                Target::Auto
+                            );
 
-                            let res = tinyget::get(download_url.as_str())
+                            let res = tinyget
+                                ::get(download_url.as_str())
                                 .send()
                                 .context("无法下载 HiPer 程序")?;
                             println!("HPR downloaded, size {}", res.as_bytes().len());
 
-                            write_file_safe(&hiper_path, res.as_bytes())
-                                .context("无法更新 HiPer 程序")?;
+                            write_file_safe(&hiper_path, res.as_bytes()).context(
+                                "无法更新 HiPer 程序"
+                            )?;
                         }
                         break;
                     }
@@ -302,16 +234,15 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         } else {
             let _ = ctx.submit_command(SET_START_TEXT, "正在安装 HiPer", Target::Auto);
 
-            let res = tinyget::get(download_url.as_str())
-                .send()
-                .context("无法下载 HiPer 程序")?;
+            let res = tinyget::get(download_url.as_str()).send().context("无法下载 HiPer 程序")?;
             println!("HPR downloaded, size {}", res.as_bytes().len());
 
             write_file_safe(&hiper_path, res.as_bytes()).context("无法安装 HiPer 程序")?;
 
             #[cfg(unix)]
             {
-                std::process::Command::new("chmod")
+                std::process::Command
+                    ::new("chmod")
                     .arg("+x")
                     .arg(hiper_path.to_string_lossy().to_string())
                     .status()
@@ -325,8 +256,11 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
     let mut child = Command::new(hiper_path);
 
     if has_token {
-        child.arg("-config");
-        child.arg(cert_path.to_path_buf());
+        child.arg("-g");
+        child.arg(token);
+        if !use_tun {
+            child.arg("-t");
+        }
     }
 
     let (sender, reciver) = oneshot::channel::<String>();
@@ -361,12 +295,17 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                 // 阻止调试控制台的直接关闭进程
                 use windows::Win32::System::Console::*;
                 unsafe extern "system" fn console_ctrl_handler(
-                    event: u32,
+                    event: u32
                 ) -> windows::Win32::Foundation::BOOL {
                     match event {
-                        CTRL_CLOSE_EVENT | CTRL_C_EVENT | CTRL_BREAK_EVENT | CTRL_LOGOFF_EVENT
+                        | CTRL_CLOSE_EVENT
+                        | CTRL_C_EVENT
+                        | CTRL_BREAK_EVENT
+                        | CTRL_LOGOFF_EVENT
                         | CTRL_SHUTDOWN_EVENT => {
-                            println!("[WARN] 请不要直接停止控制台窗口！请点击主窗口的关闭按钮关闭 HiPer Bridge！");
+                            println!(
+                                "[WARN] 请不要直接停止控制台窗口！请点击主窗口的关闭按钮关闭 HiPer Bridge！"
+                            );
                             stop_hiper_directly();
                         }
                         _ => {}
@@ -390,7 +329,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                 *p = Some(Vec::with_capacity(16));
             }
             if let Some(p) = p.as_mut() {
-                p.push(child.id())
+                p.push(child.id());
             }
         }
         HIPER_PROCESS.store(child.id(), std::sync::atomic::Ordering::SeqCst);
@@ -422,31 +361,30 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                         if let Ok(ipv4) = ipv4.parse::<std::net::Ipv4Addr>() {
                             if ipv4.is_unspecified() {
                                 if let Some(sender) = sender.take() {
-                                    sender.send("".into()).map_err(|x| {
+                                    sender
+                                        .send("".into())
+                                        .map_err(|x| {
+                                            anyhow::anyhow!(
+                                                "无法发送 IP 地址到父线程：{}",
+                                                x.as_inner()
+                                            )
+                                        })?;
+                                }
+                            } else if let Some(sender) = sender.take() {
+                                sender
+                                    .send(ipv4.to_string())
+                                    .map_err(|x| {
                                         anyhow::anyhow!(
                                             "无法发送 IP 地址到父线程：{}",
                                             x.as_inner()
                                         )
                                     })?;
-                                }
-                            } else if let Some(sender) = sender.take() {
-                                sender.send(ipv4.to_string()).map_err(|x| {
-                                    anyhow::anyhow!("无法发送 IP 地址到父线程：{}", x.as_inner())
-                                })?;
-                                crate::tray::set_icon(true);
-                                crate::tray::notify(
-                                    "HiPer Bridge 正在运行！",
-                                    &format!("现在可以使用地址 {} 来访问 HiPer 网络了", ipv4),
-                                );
                                 plugin::dispatch_event("joined");
                                 sent = true;
                             }
                         }
-                    }else if let Some(valid_at) = crate::log_parser::try_get_valid(line) {
-                        let _ = ctx_c.submit_command(SET_VALID, valid_at.to_string(), Target::Auto);
-                        sent = true;
-                    }else if let Some((level, _msg, error)) =
-                        crate::log_parser::try_get_log_line(line)
+                    } else if
+                        let Some((level, _msg, error)) = crate::log_parser::try_get_log_line(line)
                     {
                         if &level == "error" {
                             match error.as_str() {
@@ -454,16 +392,15 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                                     let _ = ctx_c.submit_command(
                                         SET_WARNING,
                                         "警告：凭证已过期！请使用新的凭证密钥重试！".to_string(),
-                                        Target::Auto,
+                                        Target::Auto
                                     );
                                     sent = false;
                                 }
                                 "Failed to open udp listener" => {
                                     let _ = ctx_c.submit_command(
                                         SET_WARNING,
-                                        "错误：HiPer无法监听服务端口，请确认端口占用情况"
-                                            .to_string(),
-                                        Target::Auto,
+                                        "错误：HiPer无法监听服务端口，请确认端口占用情况".to_string(),
+                                        Target::Auto
                                     );
                                     sent = false;
                                 }
@@ -471,7 +408,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                                     let _ = ctx_c.submit_command(
                                         SET_WARNING,
                                         "错误：无法获取 TUN/TAP 设备！这应该是你多开了 HiPer 导致设备被占用了".to_string(),
-                                        Target::Auto,
+                                        Target::Auto
                                     );
                                     sent = false;
                                 }
@@ -491,9 +428,11 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
                     if no_more_logs {
                         if let Ok(Some(_)) = child.try_wait() {
                             if let Some(sender) = sender.take() {
-                                sender.send("".into()).map_err(|x| {
-                                    anyhow::anyhow!("无法发送消息到父线程：{}", x.as_inner())
-                                })?;
+                                sender
+                                    .send("".into())
+                                    .map_err(|x| {
+                                        anyhow::anyhow!("无法发送消息到父线程：{}", x.as_inner())
+                                    })?;
                             }
                             break;
                         }
@@ -514,17 +453,22 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
         println!("[WARN] HiPer 已退出！");
         plugin::dispatch_event("stopped");
 
-        if sent && !child.wait().map(|x| x.success()).unwrap_or(false) {
+        if
+            sent &&
+            !child
+                .wait()
+                .map(|x| x.success())
+                .unwrap_or(false)
+        {
             let _ = ctx_c.submit_command(
                 SET_WARNING,
-                "警告：HiPer Bridge 意外退出！5 秒后将会自动重启！\n　　如需阻止自动重启，请点击关闭按钮！".to_string(),
-                Target::Auto,
+                "警告：HiPer 服务程序已退出！若是意外退出，守护程序将在 5 秒后自动重启服务程序！\n\n　　如需阻止自动重启，请点击关闭按钮！".to_string(),
+                Target::Auto
             );
             plugin::dispatch_event("crashed");
             std::thread::sleep(std::time::Duration::from_secs(5));
             let _ = ctx_c.submit_command(REQUEST_RESTART, (), Target::Auto);
         }
-        crate::tray::set_icon(false);
         Ok(())
     });
 
@@ -537,7 +481,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
             let _ = ctx.submit_command(
                 SET_WARNING,
                 "错误：HiPer 入网失败！请检查凭证密钥是否填写正确！".to_string(),
-                Target::Auto,
+                Target::Auto
             );
         }
     } else {
@@ -545,7 +489,7 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
             let _ = ctx.submit_command(
                 SET_WARNING,
                 "警告：没有提供凭证，HiPer 将使用临时网络连接并将会在半小时后断连！".to_string(),
-                Target::Auto,
+                Target::Auto
             );
         }
         let _ = ctx.submit_command(SET_IP, ip, Target::Auto);
@@ -576,7 +520,7 @@ pub fn is_running() -> bool {
 pub fn stop_hiper_directly() {
     let pid = HIPER_PROCESS.swap(0, std::sync::atomic::Ordering::SeqCst);
     if pid != 0 {
-        stop_process(pid)
+        stop_process(pid);
     }
     if let Ok(mut p) = SPAWNED_PROCESSES.lock() {
         if let Some(p) = p.as_mut() {
