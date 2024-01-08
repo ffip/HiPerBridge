@@ -78,6 +78,7 @@ fn main() {
                                 token,
                                 data.use_tun,
                                 data.use_tcp,
+                                data.use_igmp,
                                 data.fast_mode,
                                 data.debug_mode
                             );

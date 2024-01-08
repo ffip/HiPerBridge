@@ -22,6 +22,7 @@ pub fn save_config(app_state: &AppState) {
             data_hashmap.insert("token".into(), JsonValue::String(app_state.token.to_owned()));
             data_hashmap.insert("use_tun".into(), JsonValue::Boolean(app_state.use_tun));
             data_hashmap.insert("use_tcp".into(), JsonValue::Boolean(app_state.use_tcp));
+            data_hashmap.insert("use_igmp".into(), JsonValue::Boolean(app_state.use_igmp));
             data_hashmap.insert("auto_restart".into(), JsonValue::Boolean(app_state.auto_restart));
             data_hashmap.insert("fast_mode".into(), JsonValue::Boolean(app_state.fast_mode));
             data_hashmap.insert("debug_mode".into(), JsonValue::Boolean(app_state.debug_mode));
@@ -63,6 +64,13 @@ pub fn load_config(app_state: &mut AppState) {
                             .map(|x| x.get::<bool>().copied().unwrap_or(false))
                     {
                         app_state.use_tcp = use_tcp;
+                    }
+                    if
+                        let Some(use_igmp) = data
+                            .get("use_igmp")
+                            .map(|x| x.get::<bool>().copied().unwrap_or(false))
+                    {
+                        app_state.use_igmp = use_igmp;
                     }
                     if
                         let Some(auto_restart) = data

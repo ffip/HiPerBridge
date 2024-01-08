@@ -163,6 +163,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                         token,
                                         data.use_tun,
                                         data.use_tcp,
+                                        data.use_igmp,
                                         data.fast_mode,
                                         data.debug_mode
                                     );
@@ -224,6 +225,14 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_child(
             ToggleSwitch::new()
                 .lens(AppState::fast_mode)
+                .disabled_if(|data: &AppState, _| !data.ip.is_empty())
+        )
+        .with_spacer(10.0)
+        .with_child(label::new("多播优化"))
+        .with_spacer(5.0)
+        .with_child(
+            ToggleSwitch::new()
+                .lens(AppState::use_igmp)
                 .disabled_if(|data: &AppState, _| !data.ip.is_empty())
         )
         .with_spacer(10.0)

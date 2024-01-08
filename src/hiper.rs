@@ -71,12 +71,13 @@ pub fn run_hiper_in_thread(
     token: String,
     use_tun: bool,
     use_tcp: bool,
+    use_igmp: bool,
     fast_mode: bool,
     debug_mode: bool
 ) {
     std::thread::spawn(move || {
         let _ = ctx.submit_command(SET_DISABLED, true, Target::Auto);
-        match run_hiper(ctx.to_owned(), token, use_tun, use_tcp, fast_mode, debug_mode) {
+        match run_hiper(ctx.to_owned(), token, use_tun, use_tcp, use_igmp, fast_mode, debug_mode) {
             Ok(_) => {
                 println!("Launched!");
             }
@@ -124,6 +125,7 @@ pub fn run_hiper(
     token: String,
     use_tun: bool,
     use_tcp: bool,
+    use_igmp: bool,
     fast_mode: bool,
     debug_mode: bool
 ) -> DynResult {
@@ -278,6 +280,10 @@ pub fn run_hiper(
         child.arg("-t");
     }
 
+    if !use_igmp {
+        child.arg("-m");
+    }
+
     if !use_tcp {
         child.arg("--tcp");
     }
@@ -406,7 +412,7 @@ pub fn run_hiper(
                                 sent = true;
                             }
                         }
-                    } 
+                    }
                     // else if
                     //     let Some((level, _msg, error)) = crate::log_parser::try_get_log_line(line)
                     // {
