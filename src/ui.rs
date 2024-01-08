@@ -167,7 +167,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                         data.debug_mode
                                     );
                                 }
-                                "关闭" => {
+                                "返回" => {
                                     std::thread::spawn(move || {
                                         let _ = ctx.submit_command(
                                             SET_DISABLED,
