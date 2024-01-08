@@ -258,9 +258,10 @@ pub fn run_hiper(ctx: ExtEventSink, token: String, use_tun: bool, _debug_mode: b
     if has_token {
         child.arg("-g");
         child.arg(token);
-        if !use_tun {
-            child.arg("-t");
-        }
+    }
+
+    if !use_tun {
+        child.arg("-t");
     }
 
     let (sender, reciver) = oneshot::channel::<String>();

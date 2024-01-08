@@ -184,7 +184,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
 
 fn setting_page() -> Box<dyn Widget<AppState>> {
     Flex::column()
-        .with_child(label::new("WinTAP / WinTUN"))
+        .with_child(label::new("TAP / TUN"))
         .with_spacer(5.0)
         .with_child(
             ToggleSwitch::new()
@@ -219,17 +219,16 @@ fn setting_page() -> Box<dyn Widget<AppState>> {
         .with_child(label::new("关于"))
         .with_spacer(10.0)
         .with_child(label::new("HiPer Bridge v0.0.8"))
-        .with_child(label::new("轻量级 HiPer 启动器"))
-        .with_child(label::new("By SteveXMH"))
+        .with_child(label::new("轻量级 HiPer 可视化启动器"))
         .with_spacer(10.0)
-        .with_child(label::new("HiPer / Matrix"))
+        .with_child(label::new("HiPer / Matrix / VLAN"))
         .with_child(label::new("一款轻量、敏捷、去中心化的跨区域组网系统"))
         .with_spacer(10.0)
-        .with_child(
-            Button::new("使用帮助").on_click(|_, _, _| {
-                open_url("https://www.yuque.com/ffip/hiper/hb");
-            })
-        )
+        // .with_child(
+        //     Button::new("使用帮助").on_click(|_, _, _| {
+        //         open_url("https://www.yuque.com/ffip/hiper/hb");
+        //     })
+        // )
         .cross_axis_alignment(widget::CrossAxisAlignment::Fill)
         .padding((10.0, 10.0))
         .scroll()
