@@ -30,11 +30,6 @@ pub type DynResult<T = ()> = std::result::Result<T, anyhow::Error>;
 use app_state::AppState;
 use ui::*;
 
-#[cfg(windows)]
-use windows::Win32::UI::Shell::{IsUserAnAdmin, ShellExecuteW};
-#[cfg(windows)]
-use windows::{core::PCWSTR, w};
-
 fn main() {
     #[cfg(target_os = "linux")]
     {
