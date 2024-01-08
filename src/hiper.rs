@@ -406,48 +406,49 @@ pub fn run_hiper(
                                 sent = true;
                             }
                         }
-                    } else if
-                        let Some((level, _msg, error)) = crate::log_parser::try_get_log_line(line)
-                    {
-                        if &level == "error" {
-                            match error.as_str() {
-                                "Hiper certificate for this point is expired" => {
-                                    let _ = ctx_c.submit_command(
-                                        SET_WARNING,
-                                        "警告：凭证已过期！请使用新的凭证密钥重试！".to_string(),
-                                        Target::Auto
-                                    );
-                                    sent = false;
-                                }
-                                "Failed to open udp listener" => {
-                                    let _ = ctx_c.submit_command(
-                                        SET_WARNING,
-                                        "错误：HiPer无法监听服务端口，请确认端口占用情况".to_string(),
-                                        Target::Auto
-                                    );
-                                    sent = false;
-                                }
-                                "Failed to get a tun/tap device" => {
-                                    let _ = ctx_c.submit_command(
-                                        SET_WARNING,
-                                        "错误：无法获取 TUN/TAP 设备！这应该是你多开了 HiPer 导致设备被占用了".to_string(),
-                                        Target::Auto
-                                    );
-                                    sent = false;
-                                }
-                                _ => {
-                                    // let _ = ctx_c.submit_command(
-                                    //     SET_WARNING,
-                                    //     "错误：HiPer 启动失败！请检查 latest.log 日志文件确认问题！".to_string(),
-                                    //     Target::Auto,
-                                    // );
-                                    // sent = false;
-                                }
-                            }
-                            std::thread::sleep(std::time::Duration::from_secs(5));
-                            let _ = ctx_c.submit_command(SET_WARNING, "".to_string(), Target::Auto);
-                        }
-                    }
+                    } 
+                    // else if
+                    //     let Some((level, _msg, error)) = crate::log_parser::try_get_log_line(line)
+                    // {
+                    //     if &level == "error" {
+                    //         match error.as_str() {
+                    //             "Hiper certificate for this point is expired" => {
+                    //                 let _ = ctx_c.submit_command(
+                    //                     SET_WARNING,
+                    //                     "警告：凭证已过期！请使用新的凭证密钥重试！".to_string(),
+                    //                     Target::Auto
+                    //                 );
+                    //                 sent = false;
+                    //             }
+                    //             "Failed to open udp listener" => {
+                    //                 let _ = ctx_c.submit_command(
+                    //                     SET_WARNING,
+                    //                     "错误：HiPer无法监听服务端口，请确认端口占用情况".to_string(),
+                    //                     Target::Auto
+                    //                 );
+                    //                 sent = false;
+                    //             }
+                    //             "Failed to get a tun/tap device" => {
+                    //                 let _ = ctx_c.submit_command(
+                    //                     SET_WARNING,
+                    //                     "错误：无法获取 TUN/TAP 设备！这应该是你多开了 HiPer 导致设备被占用了".to_string(),
+                    //                     Target::Auto
+                    //                 );
+                    //                 sent = false;
+                    //             }
+                    //             _ => {
+                    //                 // let _ = ctx_c.submit_command(
+                    //                 //     SET_WARNING,
+                    //                 //     "错误：HiPer 启动失败！请检查 latest.log 日志文件确认问题！".to_string(),
+                    //                 //     Target::Auto,
+                    //                 // );
+                    //                 // sent = false;
+                    //             }
+                    //         }
+                    //         std::thread::sleep(std::time::Duration::from_secs(5));
+                    //         let _ = ctx_c.submit_command(SET_WARNING, "".to_string(), Target::Auto);
+                    //     }
+                    // }
                     if no_more_logs {
                         if let Ok(Some(_)) = child.try_wait() {
                             if let Some(sender) = sender.take() {
@@ -516,7 +517,7 @@ pub fn run_hiper(
             );
         }
         let _ = ctx.submit_command(SET_IP, ip, Target::Auto);
-        let _ = ctx.submit_command(SET_START_TEXT, "关闭", Target::Auto);
+        let _ = ctx.submit_command(SET_START_TEXT, "返回", Target::Auto);
     }
 
     Ok(())
