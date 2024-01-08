@@ -20,7 +20,6 @@ mod icons;
 mod log_parser;
 mod open_url;
 mod plugin;
-mod tray;
 mod ui;
 mod utils;
 #[cfg(target_os = "macos")]
@@ -67,8 +66,6 @@ fn main() {
     }
 
     let mut state = AppState::default();
-    tray::init_tray();
-    tray::set_tooltip("HiPer Bridge");
 
     load_config(&mut state);
 
@@ -118,7 +115,6 @@ fn main() {
                         })
                         .on_command(SET_IP, |_ctx, ip, data| {
                             data.ip = ip.to_owned();
-                            tray::set_icon(!data.ip.is_empty());
                         })
                         .on_command(SET_VALID, |_, valid_at, data| {
                             data.valid_at = valid_at.to_owned();
@@ -269,8 +265,6 @@ fn main() {
             env.set(druid::theme::TEXTBOX_BORDER_RADIUS, 2.);
         });
 
-        tray::set_ctx(app.get_external_handle());
-
         app.launch(cloned_app_state).unwrap();
 
         if !hiper::is_running() {
@@ -279,20 +273,10 @@ fn main() {
 
         let t = Instant::now();
 
-        tray::notify("HiPer Bridge 正在后台运行", "右键托盘图标重新打开主窗口");
-
-        if let tray::TrayMessage::Exit = tray::take_command() {
-            let state = saved_app_state.lock().unwrap().to_owned();
-            save_config(&state);
-            break;
-        }
-
         // 恢复窗口关闭期间的运行时间
         saved_app_state.lock().unwrap().run_time += t.elapsed().as_secs() as usize;
     }
     hiper::stop_hiper_directly();
-
-    tray::uninit_tray();
 
     plugin::dispatch_event_and_wait("hb-exit");
 }
