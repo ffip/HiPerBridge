@@ -137,6 +137,27 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                             let token = data.token.to_owned();
                             match data.start_button {
                                 "启动" => {
+                                    if data.kill_hiper_when_start {
+                                        #[cfg(windows)]
+                                        {
+                                            use std::os::windows::process::CommandExt;
+                                            let _ = std::process::Command
+                                                ::new("taskkill.exe")
+                                                .arg("/F")
+                                                .arg("/IM")
+                                                .arg("hiper.exe")
+                                                .creation_flags(0x08000000)
+                                                .status();
+                                        }
+                                        #[cfg(any(target_os = "linux", target_os = "macos"))]
+                                        {
+                                            let _ = std::process::Command
+                                                ::new("sudo")
+                                                .arg("killall")
+                                                .arg("hiper")
+                                                .status();
+                                        }
+                                    }
                                     run_hiper_in_thread(
                                         ctx,
                                         token,

@@ -38,24 +38,6 @@ fn main() {
 
     load_config(&mut state);
 
-    if state.kill_hiper_when_start {
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            let _ = std::process::Command
-                ::new("taskkill.exe")
-                .arg("/F")
-                .arg("/IM")
-                .arg("hiper.exe")
-                .creation_flags(0x08000000)
-                .status();
-        }
-        #[cfg(target_os = "linux")]
-        {
-            let _ = std::process::Command::new("kill").arg("-9").arg("hiper").status();
-        }
-    }
-
     let size = (295.0, 232.0 + 32.0);
 
     plugin::dispatch_event_and_wait("hb-launch");

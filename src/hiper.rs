@@ -125,7 +125,7 @@ pub fn run_hiper(
     use_tun: bool,
     use_tcp: bool,
     fast_mode: bool,
-    debug_mode: bool
+    _debug_mode: bool
 ) -> DynResult {
     println!("Launching hiper using token {}", token);
 
