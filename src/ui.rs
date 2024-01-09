@@ -117,7 +117,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
         )
         .with_child(
             label
-                ::new("配置索引")
+                ::new("通信令牌")
                 .show_if(|data: &AppState, _| data.ip.is_empty())
                 .padding((0.0, 5.0))
         )
