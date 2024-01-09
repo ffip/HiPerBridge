@@ -70,7 +70,11 @@ fn main() {
                         data.warning = warning.to_owned();
                     })
                     .on_command(REQUEST_RESTART, |ctx, _, data| {
-                        if data.auto_restart && !data.ip.is_empty() {
+                        if !data.auto_restart | data.disabled | data.ip.is_empty() {
+                            return;
+                        }
+                        std::thread::sleep(std::time::Duration::from_secs(5));
+                        if !data.disabled {
                             let token = data.token.to_owned();
                             let ctx = ctx.get_external_handle();
                             run_hiper_in_thread(

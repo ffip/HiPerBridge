@@ -515,7 +515,6 @@ pub fn run_hiper(
                 Target::Auto
             );
             plugin::dispatch_event("crashed");
-            std::thread::sleep(std::time::Duration::from_secs(5));
             let _ = ctx_c.submit_command(REQUEST_RESTART, (), Target::Auto);
         }
         Ok(())
