@@ -80,7 +80,8 @@ fn main() {
                                 data.use_tcp,
                                 data.use_igmp,
                                 data.fast_mode,
-                                data.debug_mode
+                                data.debug_mode,
+                                data.kill_hiper_when_start
                             );
                         }
                     })

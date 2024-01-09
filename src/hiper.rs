@@ -73,10 +73,29 @@ pub fn run_hiper_in_thread(
     use_tcp: bool,
     use_igmp: bool,
     fast_mode: bool,
-    debug_mode: bool
+    debug_mode: bool,
+    kill_hiper_when_start: bool
 ) {
     std::thread::spawn(move || {
         let _ = ctx.submit_command(SET_DISABLED, true, Target::Auto);
+        if kill_hiper_when_start {
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                let _ = std::process::Command
+                    ::new("taskkill.exe")
+                    .arg("/F")
+                    .arg("/IM")
+                    .arg("hiper.exe")
+                    .creation_flags(0x08000000)
+                    .status();
+            }
+            #[cfg(any(target_os = "linux", target_os = "macos"))]
+            {
+                let _ = std::process::Command::new("sudo").arg("killall").arg("hiper").status();
+            }
+        }
+
         match run_hiper(ctx.to_owned(), token, use_tun, use_tcp, use_igmp, fast_mode, debug_mode) {
             Ok(_) => {
                 println!("Launched!");
