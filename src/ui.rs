@@ -96,7 +96,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                 {
                                     let _ = cb.set_contents(
                                         format!(
-                                            "我正在邀请你加入到我的网络\n\n我的网络地址是 {} \n请使用通信令牌 {}\n通过HiPer客户端加入。\n\n客户端下载地址: l-l.cn",
+                                            "我正在邀请你加入到我的网络\n\n我的网络地址是 {} \n请使用通信令牌 {}\n通过HiPer客户端加入\n\n客户端下载地址: l-l.cn",
                                             data.ip,
                                             data.token
                                         )
@@ -111,7 +111,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                 {
                                     let _ = cb.set_contents(
                                         format!(
-                                            "我正在邀请你加入到我的网络\n\n我的网络地址是 {} \n请使用通信令牌 {}\n通过HiPer客户端加入。\n\n客户端下载地址: l-l.cn",
+                                            "我正在邀请你加入到我的网络\n\n我的网络地址是 {} \n请使用通信令牌 {}\n通过HiPer客户端加入\n\n客户端下载地址: l-l.cn",
                                             data.ip,
                                             data.token
                                         )
@@ -126,7 +126,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                 {
                                     let _ = cb.set_contents(
                                         format!(
-                                            "我正在邀请你加入到我的网络\n\n我的网络地址是 {} \n请使用通信令牌 {}\n通过HiPer客户端加入。\n\n客户端下载地址: l-l.cn",
+                                            "我正在邀请你加入到我的网络\n\n我的网络地址是 {} \n请使用通信令牌 {}\n通过HiPer客户端加入\n\n客户端下载地址: l-l.cn",
                                             data.ip,
                                             data.token
                                         )
