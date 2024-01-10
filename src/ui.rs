@@ -71,7 +71,12 @@ fn main_page() -> Box<dyn Widget<AppState>> {
 
                                 let _ = write!(run_time_formated, "{:02}:{:02}", min, sec);
 
-                                format!("网络地址：{}\n运行时间：{}", data.ip, run_time_formated)
+                                format!(
+                                    "通信令牌：{}\n网络地址：{}\n运行时间：{}",
+                                    data.token,
+                                    data.ip,
+                                    run_time_formated
+                                )
                             }
                         })
                         .with_text_color(Color::Rgba32(0x0f7b0fff))
@@ -89,7 +94,13 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                     let Ok(mut cb) =
                                         clipboard::windows_clipboard::WindowsClipboardContext::new()
                                 {
-                                    let _ = cb.set_contents(data.ip.to_owned());
+                                    let _ = cb.set_contents(
+                                        format!(
+                                            "我正在邀请你加入到我的网络\n\n我的网络地址是 {} \n请使用通信令牌 {}\n通过HiPer客户端加入。\n\n客户端下载地址: l-l.cn",
+                                            data.ip,
+                                            data.token
+                                        )
+                                    );
                                 }
                             }
                             #[cfg(target_os = "linux")]
@@ -98,7 +109,13 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                     let Ok(mut cb) =
                                         clipboard::x11_clipboard::X11ClipboardContext::<clipboard::x11_clipboard::Clipboard>::new()
                                 {
-                                    let _ = cb.set_contents(data.ip.to_owned());
+                                    let _ = cb.set_contents(
+                                        format!(
+                                            "我正在邀请你加入到我的网络\n\n我的网络地址是 {} \n请使用通信令牌 {}\n通过HiPer客户端加入。\n\n客户端下载地址: l-l.cn",
+                                            data.ip,
+                                            data.token
+                                        )
+                                    );
                                 }
                             }
                             #[cfg(target_os = "macos")]
@@ -107,7 +124,13 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                     let Ok(mut cb) =
                                         clipboard::osx_clipboard::OSXClipboardContext::new()
                                 {
-                                    let _ = cb.set_contents(data.ip.to_owned());
+                                    let _ = cb.set_contents(
+                                        format!(
+                                            "我正在邀请你加入到我的网络\n\n我的网络地址是 {} \n请使用通信令牌 {}\n通过HiPer客户端加入。\n\n客户端下载地址: l-l.cn",
+                                            data.ip,
+                                            data.token
+                                        )
+                                    );
                                 }
                             }
                         })
