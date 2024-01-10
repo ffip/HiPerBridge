@@ -72,7 +72,7 @@ fn main_page() -> Box<dyn Widget<AppState>> {
                                 let _ = write!(run_time_formated, "{:02}:{:02}", min, sec);
 
                                 format!(
-                                    "通信令牌：{}\n网络地址： {}\n运行时间： {}",
+                                    "通信令牌: {}\n网络地址: {}\n运行时间: {}",
                                     data.token,
                                     data.ip,
                                     run_time_formated
